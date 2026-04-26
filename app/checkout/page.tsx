@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/utils"
 "use client"
 
 import { useState } from "react"
@@ -11,7 +12,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
 import { createOrder, saveOrder } from "@/lib/order-service"
-import { sendAdminOrderNotification, sendCustomerOrderConfirmation } from "@/lib/email-service"
 import type { CustomerInfo } from "@/lib/types"
 
 export default function CheckoutPage() {
@@ -117,11 +117,7 @@ export default function CheckoutPage() {
     // Save order to storage
     saveOrder(order)
 
-    // Send admin notification
-    await sendAdminOrderNotification(order)
-
-    // Send customer confirmation
-    await sendCustomerOrderConfirmation(order)
+    // Notificación por WhatsApp: el flujo de email está deshabilitado en esta versión MVP
 
     const success = completePurchase()
 
@@ -538,7 +534,7 @@ export default function CheckoutPage() {
                           key={item.product.id}
                           className={`flex gap-3 ${hasStockIssue ? "opacity-60" : ""}`}
                         >
-                          <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
                             <Image
                               src={item.product.image}
                               alt={item.product.name}
@@ -561,7 +557,7 @@ export default function CheckoutPage() {
                             )}
                           </div>
                           <p className="text-sm font-medium">
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            {formatPrice(item.product.price * item.quantity)}
                           </p>
                         </div>
                       )
@@ -571,24 +567,24 @@ export default function CheckoutPage() {
                   <div className="border-t border-border pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span>{formatPrice(subtotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Envío</span>
-                      <span>{shipping === 0 ? "Gratis" : `$${shipping.toFixed(2)}`}</span>
+                      <span>{shipping === 0 ? "Gratis" : formatPrice(shipping)}</span>
                     </div>
                   </div>
 
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between font-semibold">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>{formatPrice(total)}</span>
                     </div>
                   </div>
 
                   {error && (
                     <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>{error}</span>
                     </div>
                   )}

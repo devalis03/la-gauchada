@@ -124,8 +124,8 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Correo Electrónico</p>
-                    <a href="mailto:contacto@lagauchada.com" className="font-medium text-foreground hover:text-primary">
-                      contacto@lagauchada.com
+                    <a href="mailto:lagauchadamates@gmail.com" className="font-medium text-foreground hover:text-primary">
+                      lagauchadamates@gmail.com
                     </a>
                   </div>
                 </div>
@@ -136,8 +136,8 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Teléfono</p>
-                    <a href="tel:+541234567890" className="font-medium text-foreground hover:text-primary">
-                      +54 (123) 456-7890
+                    <a href="tel:+5493815764026" className="font-medium text-foreground hover:text-primary">
+                      +54 9 381 576-4026
                     </a>
                   </div>
                 </div>
@@ -186,7 +186,7 @@ export default function AboutPage() {
                     en minutos durante horario comercial.
                   </p>
                   <a
-                    href="https://wa.me/541234567890?text=Hola! Me interesa conocer más sobre los productos de mate."
+                    href="https://wa.me/5493815764026?text=Hola! Me interesa conocer más sobre los productos de mate."
                     target="_blank"
                     rel="noopener noreferrer"
                   >

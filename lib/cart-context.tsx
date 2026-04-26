@@ -22,7 +22,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 const CART_STORAGE_KEY = "mate-shop-cart"
 const PRODUCTS_STORAGE_KEY = "mate-shop-products"
 const PRODUCTS_VERSION_KEY = "mate-shop-products-version"
-const CURRENT_PRODUCTS_VERSION = "2" // Increment to force refresh of cached products
+const CURRENT_PRODUCTS_VERSION = "4" // Increment to force refresh of cached products
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])

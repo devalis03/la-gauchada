@@ -1,4 +1,6 @@
+
 "use client"
+import { formatPrice } from "@/lib/utils"
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
@@ -15,11 +17,12 @@ import {
   getPendingTransferenceOrders,
   confirmTransference,
   getOrderStats,
+  updateOrderStatus,
   type Order 
 } from "@/lib/order-service"
-import { sendTransferConfirmationEmail } from "@/lib/email-service"
 
-export default function AdminPage() {
+
+  export default function AdminPage() {
   const { products, updateStock } = useCart()
   const [editedStocks, setEditedStocks] = useState<Record<string, number>>({})
   const [savedProducts, setSavedProducts] = useState<Set<string>>(new Set())
@@ -85,7 +88,7 @@ export default function AdminPage() {
     
     if (updatedOrder) {
       // Send confirmation email to customer
-      await sendTransferConfirmationEmail(updatedOrder)
+      // Notificación por email deshabilitada en MVP
       
       // Update local state
       const allOrders = getAllOrders()
@@ -113,6 +116,15 @@ export default function AdminPage() {
   const totalProducts = products.length
   const outOfStock = products.filter((p) => p.stock === 0).length
   const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 5).length
+
+  // Marcar pedido como entregado/no entregado
+  const handleToggleDelivered = (orderId: string, delivered: boolean) => {
+    const newStatus = delivered ? "delivered" : "confirmed"
+    const updatedOrder = updateOrderStatus(orderId, newStatus)
+    if (updatedOrder) {
+      setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: updatedOrder.status } : o))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-secondary/20">
@@ -258,7 +270,7 @@ export default function AdminPage() {
                           >
                             {/* Product Info */}
                             <div className="flex flex-1 items-center gap-4">
-                              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
                                 <Image
                                   src={product.image}
                                   alt={product.name}
@@ -399,7 +411,7 @@ export default function AdminPage() {
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="text-lg font-bold text-foreground">${order.total.toFixed(2)}</p>
+                              <p className="text-lg font-bold text-foreground">{formatPrice(order.total)}</p>
                               <p className="text-sm text-yellow-700 font-medium">Pendiente de Verificación</p>
                             </div>
                           </div>
@@ -428,7 +440,7 @@ export default function AdminPage() {
                                 <ul className="space-y-1 text-sm">
                                   {order.items.map((item) => (
                                     <li key={item.product.id} className="text-muted-foreground">
-                                      {item.product.name} x{item.quantity} - ${(item.product.price * item.quantity).toFixed(2)}
+                                      {item.product.name} x{item.quantity} - {formatPrice(item.product.price * item.quantity)}
                                     </li>
                                   ))}
                                 </ul>
@@ -478,7 +490,7 @@ export default function AdminPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {orders.map((order) => (
+                  {[...orders].reverse().map((order) => (
                     <Card key={order.id}>
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between">
@@ -493,6 +505,18 @@ export default function AdminPage() {
                               {order.paymentMethod === "transferencia" ? "Transferencia Bancaria" : order.paymentMethod === "tarjeta" ? "Tarjeta de Crédito" : "Efectivo"} 
                               {order.paymentMethod === "transferencia" && ` · ${order.transferenceStatus === "confirmado" ? "✓ Confirmado" : "⏳ Pendiente"}`}
                             </p>
+                            <div className="mt-2 flex items-center gap-2">
+                              <span className={`text-xs font-semibold px-2 py-1 rounded ${order.status === "delivered" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                                {order.status === "delivered" ? "Entregado" : "No entregado"}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant={order.status === "delivered" ? "outline" : "default"}
+                                onClick={() => handleToggleDelivered(order.id, order.status !== "delivered")}
+                              >
+                                {order.status === "delivered" ? "Marcar como NO entregado" : "Marcar como Entregado"}
+                              </Button>
+                            </div>
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-bold text-foreground">${order.total.toFixed(2)}</p>
