@@ -1,5 +1,6 @@
-import { formatPrice } from "@/lib/utils"
+
 "use client"
+import { formatPrice } from "@/lib/utils"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -111,16 +112,72 @@ export default function CheckoutPage() {
 
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    // Create order
+    // Si el método es tarjeta, crear preferencia en Mercado Pago y redirigir
+    if (paymentMethod === "tarjeta") {
+      try {
+        // Construir items para Mercado Pago
+        const mpItems = items.map((item) => ({
+          title: item.product.name,
+          quantity: item.quantity,
+          currency_id: "ARS",
+          unit_price: Number(item.product.price),
+        }))
+        // Usar la API interna para crear la preferencia
+        const preferenceBody = {
+          items: mpItems,
+          payer: {
+            name: formData.firstName,
+            surname: formData.lastName,
+            email: formData.email,
+          },
+          back_urls: {
+            success: `${window.location.origin}/checkout/success`,
+            failure: `${window.location.origin}/checkout?payment=failure`,
+            pending: `${window.location.origin}/checkout?payment=pending`,
+          },
+          auto_return: "approved",
+        }
+        const res = await fetch("/api/mercadopago", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(preferenceBody),
+        })
+        let data
+        try {
+          data = await res.json()
+        } catch (jsonErr) {
+          setError("Error inesperado al procesar la respuesta de Mercado Pago.")
+          setIsSubmitting(false)
+          return
+        }
+        if (!res.ok) {
+          // Mostrar mensaje de error devuelto por la API
+          const mpMsg = data && data.message ? data.message : JSON.stringify(data)
+          setError(`Mercado Pago: ${mpMsg}`)
+          console.error("Mercado Pago error:", data)
+          setIsSubmitting(false)
+          return
+        }
+        // Guardar el pedido localmente antes de redirigir
+        const order = createOrder(items, formData, subtotal, shipping)
+        saveOrder(order)
+        completePurchase()
+        // Redirigir a Mercado Pago
+        window.location.href = data.init_point
+        return
+      } catch (err) {
+        setError("Error al conectar con Mercado Pago. Intenta nuevamente.")
+        setIsSubmitting(false)
+        return
+      }
+    }
+
+    // Flujo normal para efectivo/transferencia
     const order = createOrder(items, formData, subtotal, shipping)
-    
-    // Save order to storage
     saveOrder(order)
-
-    // Notificación por WhatsApp: el flujo de email está deshabilitado en esta versión MVP
-
     const success = completePurchase()
-
     if (success) {
       router.push(`/checkout/success?orderId=${order.id}`)
     } else {
