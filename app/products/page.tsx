@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { Suspense, useState, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Filter, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { ProductCard } from "@/components/product-card"
 import { useCart } from "@/lib/cart-context"
 import { CATEGORIES, SUBCATEGORIES, type Category, type SubcategoryId } from "@/lib/types"
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams()
   const initialCategory = searchParams.get("category") as Category | null
   const initialSubcategory = searchParams.get("subcategory") as SubcategoryId | null
@@ -223,5 +223,13 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsContent />
+    </Suspense>
   )
 }

@@ -5,16 +5,25 @@ import { Home, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
 const OrderDetails = dynamic(() => import("./OrderDetails"), { ssr: false })
 
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
+  const emailWarning = searchParams.get("emailWarning") === "1";
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {emailWarning && (
+          <div className="mx-auto mb-6 max-w-2xl rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
+            Tu pedido se registró correctamente, pero no pudimos enviar el correo
+            interno de aviso. No te preocupes: el pedido igual quedó guardado y se
+            envió por WhatsApp.
+          </div>
+        )}
         {orderId ? (
           <OrderDetails orderId={orderId} />
         ) : (
@@ -45,5 +54,13 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutSuccessContent />
+    </Suspense>
   )
 }

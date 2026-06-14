@@ -2,8 +2,8 @@
 "use client"
 import { formatPrice } from "@/lib/utils"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Check, AlertCircle, Loader2, Copy } from "lucide-react"
@@ -15,8 +15,10 @@ import { useCart } from "@/lib/cart-context"
 import { createOrder, saveOrder } from "@/lib/order-service"
 import type { CustomerInfo } from "@/lib/types"
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const paymentStatus = searchParams.get("payment")
   const { items, products, getCartTotal, completePurchase } = useCart()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -66,6 +68,21 @@ export default function CheckoutPage() {
     setTimeout(() => setCopiedText(null), 2000)
   }
 
+  // Envía la notificación de pedido al negocio vía API server-side (Resend).
+  // No bloquea la compra: si falla, devolvemos false para avisar al usuario.
+  const notifyBusiness = async (order: ReturnType<typeof createOrder>): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/send-order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order),
+      })
+      return res.ok
+    } catch {
+      return false
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -112,62 +129,46 @@ export default function CheckoutPage() {
 
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
+    // Crear el pedido (lo usamos como referencia para email y Mercado Pago)
+    const order = createOrder(items, formData, subtotal, shipping)
+
     // Si el método es tarjeta, crear preferencia en Mercado Pago y redirigir
     if (paymentMethod === "tarjeta") {
       try {
-        // Construir items para Mercado Pago
-        const mpItems = items.map((item) => ({
-          title: item.product.name,
-          quantity: item.quantity,
-          currency_id: "ARS",
-          unit_price: Number(item.product.price),
-        }))
-        // Usar la API interna para crear la preferencia
-        const preferenceBody = {
-          items: mpItems,
-          payer: {
-            name: formData.firstName,
-            surname: formData.lastName,
-            email: formData.email,
-          },
-          back_urls: {
-            success: `${window.location.origin}/checkout/success`,
-            failure: `${window.location.origin}/checkout?payment=failure`,
-            pending: `${window.location.origin}/checkout?payment=pending`,
-          },
-          auto_return: "approved",
-        }
         const res = await fetch("/api/mercadopago", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(preferenceBody),
+          body: JSON.stringify({
+            order,
+            origin: window.location.origin,
+          }),
         })
         let data
         try {
           data = await res.json()
-        } catch (jsonErr) {
+        } catch {
           setError("Error inesperado al procesar la respuesta de Mercado Pago.")
           setIsSubmitting(false)
           return
         }
-        if (!res.ok) {
-          // Mostrar mensaje de error devuelto por la API
-          const mpMsg = data && data.message ? data.message : JSON.stringify(data)
+        if (!res.ok || !data?.init_point) {
+          const mpMsg = data && data.error ? data.error : "No se pudo crear el pago."
           setError(`Mercado Pago: ${mpMsg}`)
-          console.error("Mercado Pago error:", data)
           setIsSubmitting(false)
           return
         }
-        // Guardar el pedido localmente antes de redirigir
-        const order = createOrder(items, formData, subtotal, shipping)
+
+        // Registrar el pedido y notificar al negocio antes de redirigir
         saveOrder(order)
+        await notifyBusiness(order)
         completePurchase()
-        // Redirigir a Mercado Pago
+
+        // Redirigir a Mercado Pago (Checkout Pro)
         window.location.href = data.init_point
         return
-      } catch (err) {
+      } catch {
         setError("Error al conectar con Mercado Pago. Intenta nuevamente.")
         setIsSubmitting(false)
         return
@@ -175,11 +176,13 @@ export default function CheckoutPage() {
     }
 
     // Flujo normal para efectivo/transferencia
-    const order = createOrder(items, formData, subtotal, shipping)
     saveOrder(order)
+    const emailOk = await notifyBusiness(order)
     const success = completePurchase()
     if (success) {
-      router.push(`/checkout/success?orderId=${order.id}`)
+      const params = new URLSearchParams({ orderId: order.id })
+      if (!emailOk) params.set("emailWarning", "1")
+      router.push(`/checkout/success?${params.toString()}`)
     } else {
       setError("No se pudo completar tu pedido. Verifica la disponibilidad e intenta nuevamente.")
       setIsSubmitting(false)
@@ -217,6 +220,18 @@ export default function CheckoutPage() {
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             Checkout
           </h1>
+          {paymentStatus === "failure" && (
+            <div className="mt-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>El pago con Mercado Pago fue rechazado o cancelado. Podés intentar nuevamente o elegir otro método de pago.</span>
+            </div>
+          )}
+          {paymentStatus === "pending" && (
+            <div className="mt-4 flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Tu pago quedó pendiente de acreditación. Te avisaremos cuando se confirme.</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -674,5 +689,13 @@ export default function CheckoutPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutContent />
+    </Suspense>
   )
 }

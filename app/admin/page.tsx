@@ -4,7 +4,8 @@ import { formatPrice } from "@/lib/utils"
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, Mail } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, Mail, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,7 +24,14 @@ import {
 
 
   export default function AdminPage() {
+  const router = useRouter()
   const { products, updateStock } = useCart()
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/logout", { method: "POST" })
+    router.replace("/admin/login")
+    router.refresh()
+  }
   const [editedStocks, setEditedStocks] = useState<Record<string, number>>({})
   const [savedProducts, setSavedProducts] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<"stock" | "orders">("stock")
@@ -140,6 +148,10 @@ import {
                 Gestiona stock, pedidos y transferencias bancarias
               </p>
             </div>
+            <Button variant="outline" onClick={handleLogout} className="gap-2 self-start">
+              <LogOut className="h-4 w-4" />
+              Cerrar Sesión
+            </Button>
           </div>
         </div>
       </div>
