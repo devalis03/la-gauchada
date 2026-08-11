@@ -1,32 +1,62 @@
-import { NextRequest, NextResponse } from "next/server";
-import * as mercadopago from "mercadopago";
+import { NextRequest, NextResponse } from "next/server"
+import { MercadoPagoConfig, Preference } from "mercadopago"
 
-// Usa tu Access Token de prueba aquí (mejor si luego lo pasas a variable de entorno)
-const ACCESS_TOKEN = "APP_USR-5898838466411199-050719-d1729fc6bdf3083507a9c6c30071fe34-3385710315";
+type PreferencePayload = {
+  items: Array<{
+    title: string
+    quantity: number
+    currency_id: string
+    unit_price: number
+  }>
+  payer: {
+    name: string
+    surname: string
+    email: string
+  }
+  back_urls: {
+    success: string
+    failure: string
+    pending: string
+  }
+  auto_return: "approved" | "all"
+  external_reference?: string
+}
 
-mercadopago.configure({
-  access_token: ACCESS_TOKEN,
-});
+function getMpClient() {
+  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
+  if (!accessToken) {
+    throw new Error("Missing MERCADOPAGO_ACCESS_TOKEN")
+  }
+
+  return new MercadoPagoConfig({ accessToken })
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    // Espera: items, payer, back_urls, auto_return
-    const preference = {
-      items: body.items,
-      payer: body.payer,
-      back_urls: body.back_urls,
-      auto_return: body.auto_return,
-    };
-    try {
-      const response = await mercadopago.preferences.create(preference);
-      return NextResponse.json({ init_point: response.body.init_point });
-    } catch (sdkError: any) {
-      console.error("Mercado Pago SDK error:", sdkError);
-      return NextResponse.json({ error: sdkError.message, details: sdkError }, { status: 500 });
-    }
-  } catch (error: any) {
-    console.error("API route error:", error);
-    return NextResponse.json({ error: error.message, details: error }, { status: 500 });
+    const body = (await req.json()) as PreferencePayload
+    const client = getMpClient()
+    const preference = new Preference(client)
+
+    const response = await preference.create({
+      body: {
+        items: body.items,
+        payer: body.payer,
+        back_urls: body.back_urls,
+        auto_return: body.auto_return,
+        external_reference: body.external_reference,
+      },
+    })
+
+    return NextResponse.json(
+      {
+        init_point: response.init_point,
+        id: response.id,
+      },
+      { status: 200 }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Mercado Pago request failed"
+    console.error("Mercado Pago API route error:", error)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
