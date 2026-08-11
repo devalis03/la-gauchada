@@ -20,20 +20,15 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 const CART_STORAGE_KEY = "mate-shop-cart"
-const PRODUCTS_STORAGE_KEY = "mate-shop-products"
-const PRODUCTS_VERSION_KEY = "mate-shop-products-version"
-const CURRENT_PRODUCTS_VERSION = "4" // Increment to force refresh of cached products
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [isHydrated, setIsHydrated] = useState(false)
 
-  // Hydrate from localStorage on mount
+  // Hydrate cart from localStorage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem(CART_STORAGE_KEY)
-    const savedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY)
-    const savedVersion = localStorage.getItem(PRODUCTS_VERSION_KEY)
     
     if (savedCart) {
       try {
@@ -43,22 +38,60 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    // Only use cached products if version matches current version
-    // This ensures users get updated product data (Spanish descriptions)
-    if (savedProducts && savedVersion === CURRENT_PRODUCTS_VERSION) {
-      try {
-        setProducts(JSON.parse(savedProducts))
-      } catch {
-        // Invalid products data, use initial products
-      }
-    } else {
-      // Clear old cached products and use fresh data
-      localStorage.removeItem(PRODUCTS_STORAGE_KEY)
-      localStorage.setItem(PRODUCTS_VERSION_KEY, CURRENT_PRODUCTS_VERSION)
-      setProducts(initialProducts)
-    }
-    
     setIsHydrated(true)
+  }, [])
+
+  // Fetch shared products from backend (source of truth: database)
+  useEffect(() => {
+    let isCancelled = false
+
+    async function loadProducts() {
+      try {
+        const response = await fetch("/api/products", {
+          method: "GET",
+          cache: "no-store",
+        })
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar los productos")
+        }
+
+        const payload = await response.json() as { data?: Product[] }
+        const dbProducts = payload.data
+
+        if (!Array.isArray(dbProducts) || dbProducts.length === 0) {
+          throw new Error("Respuesta inválida de productos")
+        }
+
+        if (!isCancelled) {
+          setProducts(dbProducts)
+          // Keep cart item product snapshots aligned with latest catalog data.
+          setItems((prev) =>
+            prev
+              .map((item) => {
+                const current = dbProducts.find((product) => product.id === item.product.id)
+                if (!current) return null
+                return {
+                  ...item,
+                  product: current,
+                }
+              })
+              .filter((item): item is CartItem => item !== null)
+          )
+        }
+      } catch {
+        if (!isCancelled) {
+          // Development-safe fallback to avoid blocking the storefront.
+          setProducts(initialProducts)
+        }
+      }
+    }
+
+    void loadProducts()
+
+    return () => {
+      isCancelled = true
+    }
   }, [])
 
   // Persist cart to localStorage
@@ -67,14 +100,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
     }
   }, [items, isHydrated])
-
-  // Persist products to localStorage
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products))
-      localStorage.setItem(PRODUCTS_VERSION_KEY, CURRENT_PRODUCTS_VERSION)
-    }
-  }, [products, isHydrated])
 
   const addToCart = useCallback((product: Product, quantity = 1): boolean => {
     const currentProduct = products.find(p => p.id === product.id)
