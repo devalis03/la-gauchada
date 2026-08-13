@@ -6,6 +6,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCart } from "@/lib/cart-context"
+import { formatPrice } from "@/lib/utils"
 
 export default function CartPage() {
   const { items, products, removeFromCart, updateQuantity, getCartTotal } = useCart()
@@ -80,7 +81,7 @@ export default function CartPage() {
                               {item.product.name}
                             </h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              ${item.product.price.toFixed(2)} c/u
+                              {formatPrice(item.product.price)} c/u
                             </p>
                           </div>
                           <Button
@@ -127,7 +128,7 @@ export default function CartPage() {
 
                           {/* Line Total */}
                           <p className="font-semibold text-foreground">
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            {formatPrice(item.product.price * item.quantity)}
                           </p>
                         </div>
 
@@ -153,12 +154,12 @@ export default function CartPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="font-medium">{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Envío</span>
                   <span className="font-medium">
-                    {shipping === 0 ? "Gratis" : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? "Gratis" : formatPrice(shipping)}
                   </span>
                 </div>
                 {shipping > 0 && (
@@ -170,7 +171,7 @@ export default function CartPage() {
                   <div className="flex justify-between">
                     <span className="font-semibold text-foreground">Total</span>
                     <span className="font-semibold text-foreground">
-                      ${total.toFixed(2)}
+                      {formatPrice(total)}
                     </span>
                   </div>
                 </div>

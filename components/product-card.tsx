@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCart } from "@/lib/cart-context"
 import type { Product } from "@/lib/types"
+import { formatPrice } from "@/lib/utils"
 
 interface ProductCardProps {
   product: Product
@@ -47,8 +48,8 @@ export function ProductCard({ product }: ProductCardProps) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
         />
         {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-            <span className="text-sm font-medium text-muted-foreground">Agotado</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <span className="text-base font-semibold text-destructive">Agotado</span>
           </div>
         )}
         {product.featured && !isOutOfStock && (
@@ -65,9 +66,9 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="mt-3 flex items-center justify-between">
           <div>
             <span className="text-lg font-semibold text-foreground">
-              ${product.price.toFixed(2)}
+              {formatPrice(product.price)}
             </span>
-            {isLowStock && (
+            {isLowStock && !isOutOfStock && (
               <p className="text-xs text-accent">Solo {stock} disponibles</p>
             )}
           </div>
@@ -75,10 +76,15 @@ export function ProductCard({ product }: ProductCardProps) {
             size="sm"
             onClick={handleAddToCart}
             disabled={isOutOfStock || isAdded}
-            variant={isAdded ? "secondary" : error ? "destructive" : "default"}
-            className="gap-1.5"
+            variant={isOutOfStock ? "secondary" : isAdded ? "secondary" : error ? "destructive" : "default"}
+            className={`gap-1.5 ${isOutOfStock ? "opacity-60 cursor-not-allowed" : ""}`}
           >
-            {isAdded ? (
+            {isOutOfStock ? (
+              <>
+                <AlertCircle className="h-4 w-4" />
+                Agotado
+              </>
+            ) : isAdded ? (
               <>
                 <Check className="h-4 w-4" />
                 Agregado

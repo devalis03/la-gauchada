@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { useState, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Filter, ChevronDown, ChevronRight } from "lucide-react"
@@ -9,7 +10,7 @@ import { ProductCard } from "@/components/product-card"
 import { useCart } from "@/lib/cart-context"
 import { CATEGORIES, SUBCATEGORIES, type Category, type SubcategoryId } from "@/lib/types"
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams()
   const initialCategory = searchParams.get("category") as Category | null
   const initialSubcategory = searchParams.get("subcategory") as SubcategoryId | null
@@ -223,5 +224,25 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen">
+          <div className="border-b border-border bg-secondary/30 py-12">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+                Nuestros Productos
+              </h1>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <ProductsContent />
+    </Suspense>
   )
 }
