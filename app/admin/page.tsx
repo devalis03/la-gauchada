@@ -13,12 +13,12 @@ import { CATEGORIES } from "@/lib/types"
 import { initialProducts } from "@/lib/products"
 import { 
   getAllOrders, 
-  getTransferenceOrders, 
   getPendingTransferenceOrders,
   confirmTransference,
   getOrderStats,
   updateOrderStatus,
-  type Order 
+  type Order,
+  type OrderStats
 } from "@/lib/order-service"
 
 
@@ -29,9 +29,21 @@ import {
   const [activeTab, setActiveTab] = useState<"stock" | "orders">("stock")
   const [orders, setOrders] = useState<Order[]>([])
   const [pendingTransferences, setPendingTransferences] = useState<Order[]>([])
-  const [stats, setStats] = useState<ReturnType<typeof getOrderStats> | null>(null)
+  const [stats, setStats] = useState<OrderStats | null>(null)
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null)
+
+  const refreshOrdersData = async () => {
+    const [allOrders, pending, orderStats] = await Promise.all([
+      getAllOrders(),
+      getPendingTransferenceOrders(),
+      getOrderStats(),
+    ])
+
+    setOrders(allOrders)
+    setPendingTransferences(pending)
+    setStats(orderStats)
+  }
 
   const handleStockChange = (productId: string, value: string) => {
     const numValue = parseInt(value, 10)
@@ -72,32 +84,20 @@ import {
 
   // Load orders on component mount
   useEffect(() => {
-    const allOrders = getAllOrders()
-    const pending = getPendingTransferenceOrders()
-    const orderStats = getOrderStats()
-    
-    setOrders(allOrders)
-    setPendingTransferences(pending)
-    setStats(orderStats)
+    void refreshOrdersData()
   }, [])
 
   const handleConfirmTransference = async (orderId: string) => {
     setConfirmingOrder(orderId)
     
-    const updatedOrder = confirmTransference(orderId)
+    const updatedOrder = await confirmTransference(orderId)
     
     if (updatedOrder) {
       // Send confirmation email to customer
       // Notificación por email deshabilitada en MVP
       
       // Update local state
-      const allOrders = getAllOrders()
-      const pending = getPendingTransferenceOrders()
-      const orderStats = getOrderStats()
-      
-      setOrders(allOrders)
-      setPendingTransferences(pending)
-      setStats(orderStats)
+      await refreshOrdersData()
       
       alert("Transferencia confirmada. Se ha enviado un email al cliente.")
     } else {
@@ -118,9 +118,9 @@ import {
   const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 5).length
 
   // Marcar pedido como entregado/no entregado
-  const handleToggleDelivered = (orderId: string, delivered: boolean) => {
+  const handleToggleDelivered = async (orderId: string, delivered: boolean) => {
     const newStatus = delivered ? "delivered" : "confirmed"
-    const updatedOrder = updateOrderStatus(orderId, newStatus)
+    const updatedOrder = await updateOrderStatus(orderId, newStatus)
     if (updatedOrder) {
       setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: updatedOrder.status } : o))
     }
@@ -512,7 +512,7 @@ import {
                               <Button
                                 size="sm"
                                 variant={order.status === "delivered" ? "outline" : "default"}
-                                onClick={() => handleToggleDelivered(order.id, order.status !== "delivered")}
+                                onClick={() => void handleToggleDelivered(order.id, order.status !== "delivered")}
                               >
                                 {order.status === "delivered" ? "Marcar como NO entregado" : "Marcar como Entregado"}
                               </Button>
