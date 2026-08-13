@@ -2,12 +2,36 @@
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getOrderById } from "@/lib/order-service";
+import type { Order } from "@/lib/types";
 
 export default function OrderDetails({ orderId }: { orderId: string }) {
-  const order = getOrderById(orderId);
+  const [order, setOrder] = useState<Order | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadOrder() {
+      try {
+        const loadedOrder = await getOrderById(orderId)
+        if (mounted) {
+          setOrder(loadedOrder)
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadOrder()
+
+    return () => {
+      mounted = false
+    }
+  }, [orderId])
 
   useEffect(() => {
     if (order) {
@@ -20,7 +44,19 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
     }
     // Solo redirige una vez
     // eslint-disable-next-line
-  }, []);
+  }, [order]);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl w-full mx-auto">
+        <Card className="text-center">
+          <CardContent className="pt-8 pb-8">
+            <h1 className="font-serif text-2xl font-bold text-foreground">Cargando pedido...</h1>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   if (!order) {
     return (
@@ -78,7 +114,7 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
         <Card className={isConfirmed ? "border-green-200 bg-green-50" : "border-yellow-200 bg-yellow-50"}>
           <CardContent className="pt-6 pb-6">
             <div className="flex items-start gap-4">
-              <AlertCircle className={`h-6 w-6 flex-shrink-0 ${isConfirmed ? "text-green-600" : "text-yellow-600"}`} />
+              <AlertCircle className={`h-6 w-6 shrink-0 ${isConfirmed ? "text-green-600" : "text-yellow-600"}`} />
               <div>
                 <h3 className={`font-semibold ${isConfirmed ? "text-green-900" : "text-yellow-900"}`}>{isConfirmed ? "✓ Transferencia Confirmada" : "⏳ Transferencia Pendiente de Verificación"}</h3>
                 <p className={`mt-2 text-sm ${isConfirmed ? "text-green-800" : "text-yellow-800"}`}>

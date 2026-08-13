@@ -160,9 +160,9 @@ export default function CheckoutPage() {
           setIsSubmitting(false)
           return
         }
-        // Guardar el pedido localmente antes de redirigir
+        // Guardar el pedido en backend antes de redirigir
         const order = createOrder(items, formData, subtotal, shipping)
-        saveOrder(order)
+        await saveOrder(order)
         completePurchase()
         // Redirigir a Mercado Pago
         window.location.href = data.init_point
@@ -176,7 +176,15 @@ export default function CheckoutPage() {
 
     // Flujo normal para efectivo/transferencia
     const order = createOrder(items, formData, subtotal, shipping)
-    saveOrder(order)
+
+    try {
+      await saveOrder(order)
+    } catch {
+      setError("No se pudo guardar tu pedido. Intenta nuevamente.")
+      setIsSubmitting(false)
+      return
+    }
+
     const success = completePurchase()
     if (success) {
       router.push(`/checkout/success?orderId=${order.id}`)

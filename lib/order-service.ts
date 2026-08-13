@@ -1,11 +1,10 @@
 import type { Order, CartItem, CustomerInfo } from "./types"
 
-const ORDERS_STORAGE_KEY = "la-gauchada-orders"
+const ORDERS_API_BASE = "/api/orders"
 
 /**
  * Order Management Service
- * Handles order creation, retrieval, and status updates
- * Uses localStorage for development; ready to be migrated to a database
+ * Handles order creation, retrieval, and status updates via API routes
  */
 
 export function generateOrderId(): string {
@@ -32,82 +31,98 @@ export function createOrder(
   }
 }
 
-export function saveOrder(order: Order): void {
-  try {
-    const orders = getAllOrders()
-    orders.push(order)
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders))
-  } catch (error) {
-    console.error("[Order Service] Failed to save order:", error)
-    throw new Error("No se pudo guardar el pedido")
+async function parseResponse<T>(response: Response): Promise<T> {
+  const payload = (await response.json()) as { data?: T; error?: string }
+
+  if (!response.ok || !payload.data) {
+    throw new Error(payload.error || "Error en la respuesta del servidor")
   }
+
+  return payload.data
 }
 
-export function getAllOrders(): Order[] {
-  try {
-    const stored = localStorage.getItem(ORDERS_STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch (error) {
-    console.error("[Order Service] Failed to load orders:", error)
-    return []
+export async function saveOrder(order: Order): Promise<Order> {
+  const response = await fetch(ORDERS_API_BASE, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ order }),
+  })
+
+  return parseResponse<Order>(response)
+}
+
+export async function getAllOrders(): Promise<Order[]> {
+  const response = await fetch(ORDERS_API_BASE, {
+    method: "GET",
+    cache: "no-store",
+  })
+
+  return parseResponse<Order[]>(response)
+}
+
+export async function getOrderById(orderId: string): Promise<Order | null> {
+  const response = await fetch(`${ORDERS_API_BASE}/${orderId}`, {
+    method: "GET",
+    cache: "no-store",
+  })
+
+  if (response.status === 404) {
+    return null
   }
+
+  return parseResponse<Order>(response)
 }
 
-export function getOrderById(orderId: string): Order | null {
-  const orders = getAllOrders()
-  return orders.find((o) => o.id === orderId) || null
-}
-
-export function getTransferenceOrders(): Order[] {
-  const orders = getAllOrders()
+export async function getTransferenceOrders(): Promise<Order[]> {
+  const orders = await getAllOrders()
   return orders.filter((o) => o.paymentMethod === "transferencia")
 }
 
-export function getPendingTransferenceOrders(): Order[] {
-  const orders = getAllOrders()
+export async function getPendingTransferenceOrders(): Promise<Order[]> {
+  const orders = await getAllOrders()
   return orders.filter(
     (o) => o.paymentMethod === "transferencia" && o.transferenceStatus === "pendiente"
   )
 }
 
-export function updateOrderStatus(
+export async function updateOrderStatus(
   orderId: string,
   status: Order["status"],
   transferenceStatus?: Order["transferenceStatus"]
-): Order | null {
-  try {
-    const orders = getAllOrders()
-    const orderIndex = orders.findIndex((o) => o.id === orderId)
+): Promise<Order | null> {
+  const response = await fetch(`${ORDERS_API_BASE}/${orderId}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status, transferenceStatus }),
+  })
 
-    if (orderIndex === -1) {
-      return null
-    }
-
-    orders[orderIndex].status = status
-    if (transferenceStatus !== undefined) {
-      orders[orderIndex].transferenceStatus = transferenceStatus
-    }
-
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders))
-    return orders[orderIndex]
-  } catch (error) {
-    console.error("[Order Service] Failed to update order:", error)
+  if (response.status === 404) {
     return null
   }
+
+  return parseResponse<Order>(response)
 }
 
-export function confirmTransference(orderId: string): Order | null {
+export async function confirmTransference(orderId: string): Promise<Order | null> {
   return updateOrderStatus(orderId, "confirmed", "confirmado")
 }
 
-export function getOrderStats() {
-  const orders = getAllOrders()
-  return {
-    totalOrders: orders.length,
-    pendingTransferences: orders.filter(
-      (o) => o.paymentMethod === "transferencia" && o.transferenceStatus === "pendiente"
-    ).length,
-    confirmedOrders: orders.filter((o) => o.status === "confirmed").length,
-    totalRevenue: orders.reduce((sum, o) => sum + o.total, 0),
-  }
+export type OrderStats = {
+  totalOrders: number
+  pendingTransferences: number
+  confirmedOrders: number
+  totalRevenue: number
+}
+
+export async function getOrderStats(): Promise<OrderStats> {
+  const response = await fetch(`${ORDERS_API_BASE}/stats`, {
+    method: "GET",
+    cache: "no-store",
+  })
+
+  return parseResponse<OrderStats>(response)
 }
