@@ -16,6 +16,10 @@ function isProtectedAdminRequest(request: NextRequest) {
     return true
   }
 
+  if (/^\/api\/products\/[^/]+\/stock$/.test(pathname)) {
+    return true
+  }
+
   if (/^\/api\/orders\/[^/]+\/status$/.test(pathname)) {
     return true
   }

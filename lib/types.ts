@@ -51,6 +51,9 @@ export interface Order {
   status: "pending" | "confirmed" | "shipped" | "delivered"
   paymentMethod: "efectivo" | "tarjeta" | "transferencia"
   transferenceStatus?: "pendiente" | "confirmado" | "rechazado"
+  paymentStatus?: "pending" | "approved" | "rejected" | "in_process" | "cancelled"
+  paymentId?: string
+  externalReference?: string
 }
 
 export interface OrderNotification {

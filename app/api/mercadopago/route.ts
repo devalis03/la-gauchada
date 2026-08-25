@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { MercadoPagoConfig, Preference } from "mercadopago"
+import { findOrderById, setOrderExternalReference } from "@/lib/repositories/orders-repo"
 
 type PreferencePayload = {
-  items: Array<{
-    title: string
-    quantity: number
-    currency_id: string
-    unit_price: number
-  }>
-  payer: {
-    name: string
-    surname: string
-    email: string
-  }
-  back_urls?: {
-    success?: string
-    failure?: string
-    pending?: string
-  }
-  auto_return?: "approved" | "all"
-  external_reference?: string
+  orderId?: string
 }
 
 function getMpClient() {
@@ -48,15 +32,21 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as PreferencePayload
 
-    if (!Array.isArray(body.items) || body.items.length === 0) {
-      return NextResponse.json({ error: "No hay items para crear la preferencia" }, { status: 400 })
+    if (!body.orderId) {
+      return NextResponse.json({ error: "Falta el identificador del pedido" }, { status: 400 })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || req.nextUrl.origin
+    const order = await findOrderById(body.orderId)
+    if (!order || order.paymentMethod !== "tarjeta") {
+      return NextResponse.json({ error: "Pedido inválido para pago con tarjeta" }, { status: 400 })
+    }
+
+    const configuredBaseUrl = process.env.APP_URL || req.headers.get("origin") || req.nextUrl.origin
+    const baseUrl = configuredBaseUrl.replace(/\/$/, "")
     const backUrls = {
-      success: body.back_urls?.success || `${baseUrl}/checkout/success`,
-      failure: body.back_urls?.failure || `${baseUrl}/checkout?payment=failure`,
-      pending: body.back_urls?.pending || `${baseUrl}/checkout?payment=pending`,
+      success: `${baseUrl}/checkout/success?orderId=${encodeURIComponent(order.id)}`,
+      failure: `${baseUrl}/checkout?payment=failure&orderId=${encodeURIComponent(order.id)}`,
+      pending: `${baseUrl}/checkout?payment=pending&orderId=${encodeURIComponent(order.id)}`,
     }
 
     const canUseBackUrls = !isLocalhostUrl(backUrls.success)
@@ -64,12 +54,12 @@ export async function POST(req: NextRequest) {
     const client = getMpClient()
     const preference = new Preference(client)
 
-    const mappedItems = body.items.map((item, index) => ({
-      id: `item-${index + 1}`,
-      title: item.title,
+    const mappedItems = order.items.map((item) => ({
+      id: item.product.id,
+      title: item.product.name,
       quantity: item.quantity,
-      currency_id: item.currency_id,
-      unit_price: item.unit_price,
+      currency_id: "ARS",
+      unit_price: Number(item.product.price),
     }))
 
     const preferenceBody: {
@@ -80,24 +70,36 @@ export async function POST(req: NextRequest) {
         currency_id: string
         unit_price: number
       }>
-      payer: PreferencePayload["payer"]
-      external_reference?: string
-      back_urls?: PreferencePayload["back_urls"]
+      payer: {
+        name: string
+        surname: string
+        email: string
+      }
+      external_reference: string
+      notification_url?: string
+      back_urls?: typeof backUrls
       auto_return?: "approved" | "all"
     } = {
       items: mappedItems,
-      payer: body.payer,
-      external_reference: body.external_reference,
+      payer: {
+        name: order.customer.firstName,
+        surname: order.customer.lastName,
+        email: order.customer.email,
+      },
+      external_reference: order.id,
     }
 
     if (canUseBackUrls) {
       preferenceBody.back_urls = backUrls
-      preferenceBody.auto_return = body.auto_return || "approved"
+      preferenceBody.auto_return = "approved"
+      preferenceBody.notification_url = `${baseUrl}/api/mercadopago/webhook`
     }
 
     const response = await preference.create({
       body: preferenceBody,
     })
+
+    await setOrderExternalReference(order.id, order.id)
 
     return NextResponse.json(
       {

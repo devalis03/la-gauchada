@@ -57,6 +57,8 @@ export interface Database {
           payment_method: string
           transference_status: string | null
           payment_status: string
+          payment_id: string | null
+          external_reference: string | null
           created_at: string
           updated_at: string
         }
@@ -71,6 +73,8 @@ export interface Database {
           payment_method: string
           transference_status?: string | null
           payment_status?: string
+          payment_id?: string | null
+          external_reference?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -85,6 +89,8 @@ export interface Database {
           payment_method?: string
           transference_status?: string | null
           payment_status?: string
+          payment_id?: string | null
+          external_reference?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -117,6 +123,21 @@ export interface Database {
           is_active?: boolean
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_notifications: {
+        Row: {
+          payment_id: string
+          processed_at: string
+        }
+        Insert: {
+          payment_id: string
+          processed_at?: string
+        }
+        Update: {
+          payment_id?: string
+          processed_at?: string
         }
         Relationships: []
       }

@@ -4,7 +4,7 @@ import { formatPrice } from "@/lib/utils"
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, Mail } from "lucide-react"
+import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -33,6 +33,11 @@ import {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null)
 
+  const handleLogout = async () => {
+    await fetch("/api/admin/logout", { method: "POST" })
+    window.location.href = "/admin/login"
+  }
+
   const refreshOrdersData = async () => {
     const [allOrders, pending, orderStats] = await Promise.all([
       getAllOrders(),
@@ -57,10 +62,20 @@ import {
     }
   }
 
-  const handleSave = (productId: string) => {
+  const handleSave = async (productId: string) => {
     const newStock = editedStocks[productId]
     if (newStock !== undefined) {
-      updateStock(productId, newStock)
+      const updated = await updateStock(productId, newStock)
+      if (!updated) {
+        alert("No se pudo actualizar el stock. Verifica tu sesión e intenta nuevamente.")
+        return
+      }
+
+      setEditedStocks((prev) => {
+        const next = { ...prev }
+        delete next[productId]
+        return next
+      })
       setSavedProducts((prev) => new Set(prev).add(productId))
       setTimeout(() => {
         setSavedProducts((prev) => {
@@ -72,11 +87,15 @@ import {
     }
   }
 
-  const handleResetAll = () => {
+  const handleResetAll = async () => {
     if (confirm("¿Estás seguro de que deseas restablecer el stock a los valores iniciales? Esto no se puede deshacer.")) {
-      initialProducts.forEach((product) => {
-        updateStock(product.id, product.stock)
-      })
+      const results = await Promise.all(
+        initialProducts.map((product) => updateStock(product.id, product.stock))
+      )
+      if (results.some((updated) => !updated)) {
+        alert("No se pudo restablecer todo el stock. Verifica tu sesión e intenta nuevamente.")
+        return
+      }
       setEditedStocks({})
       alert("Todo el stock ha sido restablecido a los valores iniciales.")
     }
@@ -140,6 +159,10 @@ import {
                 Gestiona stock, pedidos y transferencias bancarias
               </p>
             </div>
+            <Button variant="outline" onClick={() => void handleLogout()} className="gap-2 self-start">
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </Button>
           </div>
         </div>
       </div>
@@ -232,7 +255,7 @@ import {
             </Card>
 
             <div className="mb-8">
-              <Button variant="outline" onClick={handleResetAll} className="gap-2">
+              <Button variant="outline" onClick={() => void handleResetAll()} className="gap-2">
                 <RefreshCw className="h-4 w-4" />
                 Restablecer Todo el Stock
               </Button>
@@ -309,7 +332,7 @@ import {
                               </span>
                               <Button
                                 size="sm"
-                                onClick={() => handleSave(product.id)}
+                                onClick={() => void handleSave(product.id)}
                                 disabled={!hasChanges && !isSaved}
                                 variant={isSaved ? "secondary" : "default"}
                                 className="gap-1.5"

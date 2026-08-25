@@ -40,3 +40,23 @@ export async function listProducts(): Promise<Product[]> {
 
   return (data ?? []).map(mapProductRowToDomain)
 }
+
+export async function updateProductStock(
+  productId: string,
+  stock: number
+): Promise<Product | null> {
+  const supabase = getSupabaseAdminClient()
+
+  const { data, error } = await supabase
+    .from("products")
+    .update({ stock: Math.max(0, stock) })
+    .eq("id", productId)
+    .select("id, name, description, price, image, category, subcategory, stock, featured")
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to update product stock: ${error.message}`)
+  }
+
+  return data ? mapProductRowToDomain(data) : null
+}
