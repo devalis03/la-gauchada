@@ -3,7 +3,6 @@ import { MercadoPagoConfig, Preference } from "mercadopago"
 import {
   findOrderById,
   restoreOrderStockIfNeeded,
-  setOrderExternalReference,
 } from "@/lib/repositories/orders-repo"
 
 type PreferencePayload = {
@@ -108,8 +107,6 @@ export async function POST(req: NextRequest) {
       await restoreOrderStockIfNeeded(order.id)
       throw error
     }
-
-    await setOrderExternalReference(order.id, order.id)
 
     return NextResponse.json(
       {

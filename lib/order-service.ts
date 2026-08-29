@@ -19,8 +19,10 @@ export function createOrder(
   subtotal: number,
   shipping: number
 ): Order {
+  const orderId = generateOrderId()
+
   return {
-    id: generateOrderId(),
+    id: orderId,
     items,
     customer,
     total: subtotal + shipping,
@@ -30,6 +32,7 @@ export function createOrder(
     status: "pending",
     paymentMethod: customer.paymentMethod,
     transferenceStatus: customer.paymentMethod === "transferencia" ? "pendiente" : undefined,
+    externalReference: orderId,
   }
 }
 
