@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { MercadoPagoConfig, Preference } from "mercadopago"
-import { findOrderById, setOrderExternalReference } from "@/lib/repositories/orders-repo"
+import {
+  findOrderById,
+  restoreOrderStockIfNeeded,
+  setOrderExternalReference,
+} from "@/lib/repositories/orders-repo"
 
 type PreferencePayload = {
   orderId?: string
@@ -95,9 +99,15 @@ export async function POST(req: NextRequest) {
       preferenceBody.notification_url = `${baseUrl}/api/mercadopago/webhook`
     }
 
-    const response = await preference.create({
-      body: preferenceBody,
-    })
+    let response
+    try {
+      response = await preference.create({
+        body: preferenceBody,
+      })
+    } catch (error) {
+      await restoreOrderStockIfNeeded(order.id)
+      throw error
+    }
 
     await setOrderExternalReference(order.id, order.id)
 

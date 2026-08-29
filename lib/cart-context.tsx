@@ -163,29 +163,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items])
 
   const completePurchase = useCallback((): boolean => {
-    // Check if all items have sufficient stock
-    for (const item of items) {
-      const product = products.find(p => p.id === item.product.id)
-      if (!product || product.stock < item.quantity) {
-        return false
-      }
-    }
-
-    // Decrease stock
-    setProducts(prev =>
-      prev.map(product => {
-        const cartItem = items.find(item => item.product.id === product.id)
-        if (cartItem) {
-          return { ...product, stock: product.stock - cartItem.quantity }
-        }
-        return product
-      })
-    )
-
-    // Clear cart
+    // Stock is reserved by the backend when the order is created.
     clearCart()
     return true
-  }, [items, products, clearCart])
+  }, [clearCart])
 
   const updateStock = useCallback(async (productId: string, newStock: number): Promise<boolean> => {
     try {

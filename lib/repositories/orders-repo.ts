@@ -19,6 +19,7 @@ function mapOrderRowToDomain(row: OrderRow): Order {
     paymentStatus: row.payment_status as Order["paymentStatus"],
     paymentId: row.payment_id ?? undefined,
     externalReference: row.external_reference ?? undefined,
+    stockRestored: row.stock_restored,
   }
 }
 
@@ -188,6 +189,19 @@ export async function registerPaymentNotification(paymentId: string): Promise<bo
   }
 
   throw new Error(`Failed to register payment notification: ${error.message}`)
+}
+
+export async function restoreOrderStockIfNeeded(orderId: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase.rpc("restore_order_stock", {
+    p_order_id: orderId,
+  })
+
+  if (error) {
+    throw new Error(`Failed to restore order stock: ${error.message}`)
+  }
+
+  return data === true
 }
 
 export async function setOrderExternalReference(

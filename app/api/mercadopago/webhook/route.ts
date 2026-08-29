@@ -3,6 +3,7 @@ import { MercadoPagoConfig, Payment } from "mercadopago"
 import {
   findOrderByExternalReference,
   registerPaymentNotification,
+  restoreOrderStockIfNeeded,
   setOrderPayment,
 } from "@/lib/repositories/orders-repo"
 
@@ -67,7 +68,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, duplicate: true }, { status: 200 })
     }
 
-    await setOrderPayment(order.id, mapPaymentStatus(payment.status), paymentId)
+    const paymentStatus = mapPaymentStatus(payment.status)
+    await setOrderPayment(order.id, paymentStatus, paymentId)
+
+    if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
+      await restoreOrderStockIfNeeded(order.id)
+    }
+
     return NextResponse.json({ received: true }, { status: 200 })
   } catch (error) {
     console.error("Mercado Pago webhook error:", error)

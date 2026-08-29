@@ -12,8 +12,8 @@ import { CATEGORIES, SUBCATEGORIES, type Category, type SubcategoryId } from "@/
 
 function ProductsContent() {
   const searchParams = useSearchParams()
-  const initialCategory = searchParams.get("category") as Category | null
-  const initialSubcategory = searchParams.get("subcategory") as SubcategoryId | null
+  const initialCategory = searchParams?.get("category") as Category | null
+  const initialSubcategory = searchParams?.get("subcategory") as SubcategoryId | null
   
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(initialCategory)
   const [selectedSubcategory, setSelectedSubcategory] = useState<SubcategoryId | null>(initialSubcategory)

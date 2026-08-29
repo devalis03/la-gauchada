@@ -54,6 +54,7 @@ export interface Order {
   paymentStatus?: "pending" | "approved" | "rejected" | "in_process" | "cancelled"
   paymentId?: string
   externalReference?: string
+  stockRestored?: boolean
 }
 
 export interface OrderNotification {

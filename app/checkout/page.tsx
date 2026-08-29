@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
-import { createOrder, saveOrder } from "@/lib/order-service"
+import { createOrder, OrderApiError, saveOrder } from "@/lib/order-service"
 import type { CustomerInfo } from "@/lib/types"
 
 export default function CheckoutPage() {
@@ -149,7 +149,11 @@ export default function CheckoutPage() {
         window.location.href = data.init_point
         return
       } catch (err) {
-        setError("Error al conectar con Mercado Pago. Intenta nuevamente.")
+        if (err instanceof OrderApiError && err.status === 409) {
+          setError("Algunos artículos se agotaron mientras confirmabas el pedido. Actualiza el carrito e intenta nuevamente.")
+        } else {
+          setError("Error al conectar con Mercado Pago. Intenta nuevamente.")
+        }
         setIsSubmitting(false)
         return
       }
@@ -158,8 +162,12 @@ export default function CheckoutPage() {
     // Flujo normal para efectivo/transferencia
     try {
       await saveOrder(order)
-    } catch {
-      setError("No se pudo guardar tu pedido. Intenta nuevamente.")
+    } catch (err) {
+      if (err instanceof OrderApiError && err.status === 409) {
+        setError("Algunos artículos se agotaron mientras confirmabas el pedido. Actualiza el carrito e intenta nuevamente.")
+      } else {
+        setError("No se pudo guardar tu pedido. Intenta nuevamente.")
+      }
       setIsSubmitting(false)
       return
     }

@@ -7,8 +7,8 @@ function mapProductRowToDomain(row: {
   description: string
   price: number
   image: string
-  category: Product["category"]
-  subcategory: Product["subcategory"] | null
+  category: string
+  subcategory: string | null
   stock: number
   featured: boolean
 }): Product {
@@ -18,8 +18,8 @@ function mapProductRowToDomain(row: {
     description: row.description,
     price: row.price,
     image: row.image,
-    category: row.category,
-    subcategory: row.subcategory ?? undefined,
+    category: row.category as Product["category"],
+    subcategory: row.subcategory as Product["subcategory"] | undefined,
     stock: row.stock,
     featured: row.featured,
   }
@@ -59,4 +59,34 @@ export async function updateProductStock(
   }
 
   return data ? mapProductRowToDomain(data) : null
+}
+
+// Descuenta stock solo si hay suficiente disponible (evita sobreventa por condición de carrera).
+export async function decrementProductStock(
+  productId: string,
+  quantity: number
+): Promise<boolean> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase.rpc("decrement_product_stock", {
+    p_id: productId,
+    p_quantity: quantity,
+  })
+
+  if (error) {
+    throw new Error(`Failed to decrement stock: ${error.message}`)
+  }
+
+  return (data ?? []).length > 0
+}
+
+export async function incrementProductStock(productId: string, quantity: number): Promise<void> {
+  const supabase = getSupabaseAdminClient()
+  const { error } = await supabase.rpc("increment_product_stock", {
+    p_id: productId,
+    p_quantity: quantity,
+  })
+
+  if (error) {
+    throw new Error(`Failed to restore stock: ${error.message}`)
+  }
 }

@@ -59,6 +59,7 @@ export interface Database {
           payment_status: string
           payment_id: string | null
           external_reference: string | null
+          stock_restored: boolean
           created_at: string
           updated_at: string
         }
@@ -75,6 +76,7 @@ export interface Database {
           payment_status?: string
           payment_id?: string | null
           external_reference?: string | null
+          stock_restored?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -91,6 +93,7 @@ export interface Database {
           payment_status?: string
           payment_id?: string | null
           external_reference?: string | null
+          stock_restored?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -146,7 +149,18 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrement_product_stock: {
+        Args: { p_id: string; p_quantity: number }
+        Returns: { id: string; stock: number }[]
+      }
+      increment_product_stock: {
+        Args: { p_id: string; p_quantity: number }
+        Returns: { id: string; stock: number }[]
+      }
+      restore_order_stock: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

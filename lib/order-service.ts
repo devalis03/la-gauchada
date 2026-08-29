@@ -1,5 +1,7 @@
 import type { Order, CartItem, CustomerInfo } from "./types"
 
+export type { Order } from "./types"
+
 const ORDERS_API_BASE = "/api/orders"
 
 /**
@@ -31,11 +33,21 @@ export function createOrder(
   }
 }
 
+export class OrderApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message)
+    this.name = "OrderApiError"
+  }
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json()) as { data?: T; error?: string }
 
   if (!response.ok || !payload.data) {
-    throw new Error(payload.error || "Error en la respuesta del servidor")
+    throw new OrderApiError(
+      payload.error || "Error en la respuesta del servidor",
+      response.status
+    )
   }
 
   return payload.data
