@@ -20,6 +20,7 @@ function mapOrderRowToDomain(row: OrderRow): Order {
     paymentId: row.payment_id ?? undefined,
     externalReference: row.external_reference ?? undefined,
     stockRestored: row.stock_restored,
+    reservationExpiresAt: row.reservation_expires_at ?? undefined,
   }
 }
 
@@ -37,6 +38,10 @@ function mapOrderDomainToInsert(order: Order): Database["public"]["Tables"]["ord
     payment_status: "pending",
     payment_id: order.paymentId ?? null,
     external_reference: order.externalReference ?? null,
+    reservation_expires_at:
+      order.paymentMethod === "tarjeta"
+        ? new Date(Date.now() + 30 * 60 * 1000).toISOString()
+        : null,
   }
 }
 
@@ -202,6 +207,17 @@ export async function restoreOrderStockIfNeeded(orderId: string): Promise<boolea
   }
 
   return data === true
+}
+
+export async function expireCardOrderReservations(): Promise<number> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase.rpc("expire_card_order_reservations")
+
+  if (error) {
+    throw new Error(`Failed to expire card order reservations: ${error.message}`)
+  }
+
+  return data ?? 0
 }
 
 export async function setOrderExternalReference(

@@ -60,6 +60,7 @@ export interface Database {
           payment_id: string | null
           external_reference: string | null
           stock_restored: boolean
+          reservation_expires_at: string | null
           created_at: string
           updated_at: string
         }
@@ -77,6 +78,7 @@ export interface Database {
           payment_id?: string | null
           external_reference?: string | null
           stock_restored?: boolean
+          reservation_expires_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -94,6 +96,7 @@ export interface Database {
           payment_id?: string | null
           external_reference?: string | null
           stock_restored?: boolean
+          reservation_expires_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -160,6 +163,14 @@ export interface Database {
       restore_order_stock: {
         Args: { p_order_id: string }
         Returns: boolean
+      }
+      expire_card_order_stock: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
+      expire_card_order_reservations: {
+        Args: Record<string, never>
+        Returns: number
       }
     }
     Enums: {
