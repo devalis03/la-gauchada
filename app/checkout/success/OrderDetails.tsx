@@ -42,8 +42,6 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
       const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMsg}`;
       window.open(whatsappLink, "_blank");
     }
-    // Solo redirige una vez
-    // eslint-disable-next-line
   }, [order]);
 
   if (isLoading) {

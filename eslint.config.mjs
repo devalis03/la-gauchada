@@ -1,0 +1,16 @@
+import nextVitals from "eslint-config-next/core-web-vitals"
+
+const eslintConfig = [
+  ...nextVitals,
+  {
+    ignores: [".next/**", "node_modules/**", "tsconfig.tsbuildinfo"],
+    rules: {
+      "react-hooks/immutability": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/static-components": "off",
+    },
+  },
+]
+
+export default eslintConfig
