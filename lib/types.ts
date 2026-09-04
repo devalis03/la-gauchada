@@ -48,9 +48,14 @@ export interface Order {
   subtotal: number
   shipping: number
   createdAt: string
-  status: "pending" | "confirmed" | "shipped" | "delivered"
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled"
   paymentMethod: "efectivo" | "tarjeta" | "transferencia"
   transferenceStatus?: "pendiente" | "confirmado" | "rechazado"
+  paymentStatus?: "pending" | "approved" | "rejected" | "in_process" | "cancelled"
+  paymentId?: string
+  externalReference?: string
+  stockRestored?: boolean
+  reservationExpiresAt?: string
 }
 
 export interface OrderNotification {

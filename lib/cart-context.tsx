@@ -14,7 +14,7 @@ interface CartContextType {
   getCartTotal: () => number
   getCartCount: () => number
   completePurchase: () => boolean
-  updateStock: (productId: string, newStock: number) => void
+  updateStock: (productId: string, newStock: number) => Promise<boolean>
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -163,36 +163,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items])
 
   const completePurchase = useCallback((): boolean => {
-    // Check if all items have sufficient stock
-    for (const item of items) {
-      const product = products.find(p => p.id === item.product.id)
-      if (!product || product.stock < item.quantity) {
-        return false
-      }
-    }
-
-    // Decrease stock
-    setProducts(prev =>
-      prev.map(product => {
-        const cartItem = items.find(item => item.product.id === product.id)
-        if (cartItem) {
-          return { ...product, stock: product.stock - cartItem.quantity }
-        }
-        return product
-      })
-    )
-
-    // Clear cart
+    // Stock is reserved by the backend when the order is created.
     clearCart()
     return true
-  }, [items, products, clearCart])
+  }, [clearCart])
 
-  const updateStock = useCallback((productId: string, newStock: number) => {
-    setProducts(prev =>
-      prev.map(product =>
-        product.id === productId ? { ...product, stock: Math.max(0, newStock) } : product
+  const updateStock = useCallback(async (productId: string, newStock: number): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/products/${productId}/stock`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ stock: Math.max(0, newStock) }),
+      })
+
+      const payload = await response.json() as { data?: Product; error?: string }
+      if (!response.ok || !payload.data) {
+        return false
+      }
+
+      setProducts(prev =>
+        prev.map(product => product.id === productId ? payload.data! : product)
       )
-    )
+      return true
+    } catch {
+      return false
+    }
   }, [])
 
   return (

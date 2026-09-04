@@ -42,8 +42,6 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
       const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMsg}`;
       window.open(whatsappLink, "_blank");
     }
-    // Solo redirige una vez
-    // eslint-disable-next-line
   }, [order]);
 
   if (isLoading) {
@@ -78,6 +76,8 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
 
   const isTransference = order.paymentMethod === "transferencia";
   const isConfirmed = order.transferenceStatus === "confirmado";
+  const isCardPayment = order.paymentMethod === "tarjeta";
+  const isCardApproved = order.paymentStatus === "approved";
 
   return (
     <div className="max-w-2xl w-full mx-auto space-y-6">
@@ -89,12 +89,19 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
               <CheckCircle className="h-12 w-12 text-primary" />
             </div>
             <div>
-              <h1 className="font-serif text-2xl font-bold text-foreground">¡Pedido Confirmado!</h1>
+              <h1 className="font-serif text-2xl font-bold text-foreground">
+                {isCardPayment && !isCardApproved ? "Pedido recibido" : "¡Pedido Confirmado!"}
+              </h1>
               <p className="text-muted-foreground mt-2">Número de pedido: <span className="font-mono font-semibold">{order.id}</span></p>
             </div>
             <p className="text-foreground text-lg">
               Hemos recibido tu pedido por un total de <strong>${order.total.toFixed(2)}</strong>
             </p>
+            {isCardPayment && !isCardApproved && (
+              <p className="text-sm text-muted-foreground">
+                Estamos esperando la confirmación del pago de Mercado Pago.
+              </p>
+            )}
             <a
               href="#"
               target="_blank"

@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
-import { createOrder, saveOrder } from "@/lib/order-service"
+import { createOrder, OrderApiError, saveOrder } from "@/lib/order-service"
 import type { CustomerInfo } from "@/lib/types"
 
 export default function CheckoutPage() {
@@ -112,31 +112,16 @@ export default function CheckoutPage() {
 
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
+    const order = createOrder(items, formData, subtotal, shipping)
+
     // Si el método es tarjeta, crear preferencia en Mercado Pago y redirigir
     if (paymentMethod === "tarjeta") {
       try {
-        // Construir items para Mercado Pago
-        const mpItems = items.map((item) => ({
-          title: item.product.name,
-          quantity: item.quantity,
-          currency_id: "ARS",
-          unit_price: Number(item.product.price),
-        }))
+        // Persistir antes de enviar al checkout para vincular el pago.
+        await saveOrder(order)
+
         // Usar la API interna para crear la preferencia
-        const preferenceBody = {
-          items: mpItems,
-          payer: {
-            name: formData.firstName,
-            surname: formData.lastName,
-            email: formData.email,
-          },
-          back_urls: {
-            success: `${window.location.origin}/checkout/success`,
-            failure: `${window.location.origin}/checkout?payment=failure`,
-            pending: `${window.location.origin}/checkout?payment=pending`,
-          },
-          auto_return: "approved",
-        }
+        const preferenceBody = { orderId: order.id }
         const res = await fetch("/api/mercadopago", {
           method: "POST",
           headers: {
@@ -160,27 +145,29 @@ export default function CheckoutPage() {
           setIsSubmitting(false)
           return
         }
-        // Guardar el pedido en backend antes de redirigir
-        const order = createOrder(items, formData, subtotal, shipping)
-        await saveOrder(order)
-        completePurchase()
         // Redirigir a Mercado Pago
         window.location.href = data.init_point
         return
       } catch (err) {
-        setError("Error al conectar con Mercado Pago. Intenta nuevamente.")
+        if (err instanceof OrderApiError && err.status === 409) {
+          setError("Algunos artículos se agotaron mientras confirmabas el pedido. Actualiza el carrito e intenta nuevamente.")
+        } else {
+          setError("Error al conectar con Mercado Pago. Intenta nuevamente.")
+        }
         setIsSubmitting(false)
         return
       }
     }
 
     // Flujo normal para efectivo/transferencia
-    const order = createOrder(items, formData, subtotal, shipping)
-
     try {
       await saveOrder(order)
-    } catch {
-      setError("No se pudo guardar tu pedido. Intenta nuevamente.")
+    } catch (err) {
+      if (err instanceof OrderApiError && err.status === 409) {
+        setError("Algunos artículos se agotaron mientras confirmabas el pedido. Actualiza el carrito e intenta nuevamente.")
+      } else {
+        setError("No se pudo guardar tu pedido. Intenta nuevamente.")
+      }
       setIsSubmitting(false)
       return
     }

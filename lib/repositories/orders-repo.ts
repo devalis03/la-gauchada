@@ -16,6 +16,11 @@ function mapOrderRowToDomain(row: OrderRow): Order {
     status: row.status as Order["status"],
     paymentMethod: row.payment_method as Order["paymentMethod"],
     transferenceStatus: (row.transference_status ?? undefined) as Order["transferenceStatus"],
+    paymentStatus: row.payment_status as Order["paymentStatus"],
+    paymentId: row.payment_id ?? undefined,
+    externalReference: row.external_reference ?? undefined,
+    stockRestored: row.stock_restored,
+    reservationExpiresAt: row.reservation_expires_at ?? undefined,
   }
 }
 
@@ -31,6 +36,12 @@ function mapOrderDomainToInsert(order: Order): Database["public"]["Tables"]["ord
     payment_method: order.paymentMethod,
     transference_status: order.transferenceStatus ?? null,
     payment_status: "pending",
+    payment_id: order.paymentId ?? null,
+    external_reference: order.externalReference ?? null,
+    reservation_expires_at:
+      order.paymentMethod === "tarjeta"
+        ? new Date(Date.now() + 30 * 60 * 1000).toISOString()
+        : null,
   }
 }
 
@@ -86,6 +97,23 @@ export async function findOrderById(orderId: string): Promise<Order | null> {
   return mapOrderRowToDomain(data)
 }
 
+export async function findOrderByExternalReference(
+  externalReference: string
+): Promise<Order | null> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("external_reference", externalReference)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to fetch order by external reference: ${error.message}`)
+  }
+
+  return data ? mapOrderRowToDomain(data) : null
+}
+
 export async function setOrderStatus(
   orderId: string,
   status: Order["status"],
@@ -117,6 +145,94 @@ export async function setOrderStatus(
   }
 
   return mapOrderRowToDomain(data)
+}
+
+export async function setOrderPayment(
+  orderId: string,
+  paymentStatus: NonNullable<Order["paymentStatus"]>,
+  paymentId?: string
+): Promise<Order | null> {
+  const supabase = getSupabaseAdminClient()
+  const updatePayload: Database["public"]["Tables"]["orders"]["Update"] = {
+    payment_status: paymentStatus,
+  }
+
+  if (paymentId) {
+    updatePayload.payment_id = paymentId
+  }
+
+  if (paymentStatus === "approved") {
+    updatePayload.status = "confirmed"
+  }
+
+  const { data, error } = await supabase
+    .from("orders")
+    .update(updatePayload)
+    .eq("id", orderId)
+    .select("*")
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to update order payment: ${error.message}`)
+  }
+
+  return data ? mapOrderRowToDomain(data) : null
+}
+
+export async function registerPaymentNotification(paymentId: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient()
+  const { error } = await supabase
+    .from("payment_notifications")
+    .insert({ payment_id: paymentId })
+
+  if (!error) {
+    return true
+  }
+
+  if (error.code === "23505") {
+    return false
+  }
+
+  throw new Error(`Failed to register payment notification: ${error.message}`)
+}
+
+export async function restoreOrderStockIfNeeded(orderId: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase.rpc("restore_order_stock", {
+    p_order_id: orderId,
+  })
+
+  if (error) {
+    throw new Error(`Failed to restore order stock: ${error.message}`)
+  }
+
+  return data === true
+}
+
+export async function expireCardOrderReservations(): Promise<number> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase.rpc("expire_card_order_reservations")
+
+  if (error) {
+    throw new Error(`Failed to expire card order reservations: ${error.message}`)
+  }
+
+  return data ?? 0
+}
+
+export async function setOrderExternalReference(
+  orderId: string,
+  externalReference: string
+): Promise<void> {
+  const supabase = getSupabaseAdminClient()
+  const { error } = await supabase
+    .from("orders")
+    .update({ external_reference: externalReference })
+    .eq("id", orderId)
+
+  if (error) {
+    throw new Error(`Failed to save external reference: ${error.message}`)
+  }
 }
 
 export async function readOrderStats() {

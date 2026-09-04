@@ -11,7 +11,7 @@ const OrderDetails = dynamic(() => import("./OrderDetails"), { ssr: false })
 
 function SuccessContent() {
   const searchParams = useSearchParams()
-  const orderId = searchParams.get("orderId")
+  const orderId = searchParams?.get("orderId")
 
   return (
     <>

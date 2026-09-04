@@ -57,6 +57,10 @@ export interface Database {
           payment_method: string
           transference_status: string | null
           payment_status: string
+          payment_id: string | null
+          external_reference: string | null
+          stock_restored: boolean
+          reservation_expires_at: string | null
           created_at: string
           updated_at: string
         }
@@ -71,6 +75,10 @@ export interface Database {
           payment_method: string
           transference_status?: string | null
           payment_status?: string
+          payment_id?: string | null
+          external_reference?: string | null
+          stock_restored?: boolean
+          reservation_expires_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -85,6 +93,10 @@ export interface Database {
           payment_method?: string
           transference_status?: string | null
           payment_status?: string
+          payment_id?: string | null
+          external_reference?: string | null
+          stock_restored?: boolean
+          reservation_expires_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -120,12 +132,46 @@ export interface Database {
         }
         Relationships: []
       }
+      payment_notifications: {
+        Row: {
+          payment_id: string
+          processed_at: string
+        }
+        Insert: {
+          payment_id: string
+          processed_at?: string
+        }
+        Update: {
+          payment_id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrement_product_stock: {
+        Args: { p_id: string; p_quantity: number }
+        Returns: { id: string; stock: number }[]
+      }
+      increment_product_stock: {
+        Args: { p_id: string; p_quantity: number }
+        Returns: { id: string; stock: number }[]
+      }
+      restore_order_stock: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
+      expire_card_order_stock: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
+      expire_card_order_reservations: {
+        Args: Record<string, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
