@@ -24,7 +24,7 @@ function isProtectedAdminRequest(request: NextRequest) {
     return true
   }
 
-  if (pathname.startsWith("/api/admin/")) {
+  if (pathname.startsWith("/api/admin/") && pathname !== "/api/admin/login") {
     return true
   }
 
