@@ -16,6 +16,18 @@ function isProtectedAdminRequest(request: NextRequest) {
     return true
   }
 
+  if (pathname === "/api/products" && request.method !== "GET") {
+    return true
+  }
+
+  if (/^\/api\/products\/[^/]+$/.test(pathname) && request.method !== "GET") {
+    return true
+  }
+
+  if (pathname.startsWith("/api/admin/")) {
+    return true
+  }
+
   if (/^\/api\/products\/[^/]+\/stock$/.test(pathname)) {
     return true
   }
@@ -56,8 +68,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    "/api/admin/:path*",
     "/api/orders",
     "/api/orders/:path*",
+    "/api/products",
     "/api/products/:path*",
   ],
 }

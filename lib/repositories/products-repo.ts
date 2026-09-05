@@ -11,6 +11,7 @@ function mapProductRowToDomain(row: {
   subcategory: string | null
   stock: number
   featured: boolean
+  active?: boolean
 }): Product {
   return {
     id: row.id,
@@ -22,17 +23,26 @@ function mapProductRowToDomain(row: {
     subcategory: row.subcategory as Product["subcategory"] | undefined,
     stock: row.stock,
     featured: row.featured,
+    active: row.active ?? true,
   }
 }
 
-export async function listProducts(): Promise<Product[]> {
+const productSelect = "id, name, description, price, image, category, subcategory, stock, featured, active"
+
+export async function listProducts(includeInactive = false): Promise<Product[]> {
   const supabase = getSupabaseAdminClient()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("products")
-    .select("id, name, description, price, image, category, subcategory, stock, featured")
+    .select(productSelect)
     .order("category", { ascending: true })
     .order("name", { ascending: true })
+
+  if (!includeInactive) {
+    query = query.eq("active", true)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     throw new Error(`Failed to fetch products: ${error.message}`)
@@ -51,11 +61,58 @@ export async function updateProductStock(
     .from("products")
     .update({ stock: Math.max(0, stock) })
     .eq("id", productId)
-    .select("id, name, description, price, image, category, subcategory, stock, featured")
+    .select(productSelect)
     .maybeSingle()
 
   if (error) {
     throw new Error(`Failed to update product stock: ${error.message}`)
+  }
+
+  return data ? mapProductRowToDomain(data) : null
+}
+
+export type ProductInput = {
+  id: string
+  name: string
+  description: string
+  price: number
+  image: string
+  category: Product["category"]
+  subcategory?: Product["subcategory"] | null
+  stock: number
+  featured: boolean
+  active: boolean
+}
+
+export async function createProduct(input: ProductInput): Promise<Product> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase
+    .from("products")
+    .insert(input)
+    .select(productSelect)
+    .single()
+
+  if (error) {
+    throw new Error(`Failed to create product: ${error.message}`)
+  }
+
+  return mapProductRowToDomain(data)
+}
+
+export async function updateProduct(
+  productId: string,
+  input: Omit<ProductInput, "id">
+): Promise<Product | null> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase
+    .from("products")
+    .update(input)
+    .eq("id", productId)
+    .select(productSelect)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to update product: ${error.message}`)
   }
 
   return data ? mapProductRowToDomain(data) : null

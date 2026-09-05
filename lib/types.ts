@@ -8,6 +8,7 @@ export interface Product {
   subcategory?: SubcategoryId
   stock: number
   featured?: boolean
+  active?: boolean
 }
 
 export type Category = "promos" | "mates" | "materas" | "yerberos" | "termos" | "bombillas" | "otros"

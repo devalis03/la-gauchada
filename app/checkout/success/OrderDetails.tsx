@@ -78,6 +78,11 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
   const isConfirmed = order.transferenceStatus === "confirmado";
   const isCardPayment = order.paymentMethod === "tarjeta";
   const isCardApproved = order.paymentStatus === "approved";
+  const whatsappNumber = "5493815764026";
+  const whatsappMessage = encodeURIComponent(
+    `Hola, acabo de hacer una compra en la web. Mi número de pedido es ${order.id}.\nNombre: ${order.customer.firstName} ${order.customer.lastName}\nTeléfono: ${order.customer.phone}\nEmail: ${order.customer.email}\nDirección: ${order.customer.address}, ${order.customer.city}, ${order.customer.postalCode}\nTotal: $${order.total.toFixed(2)}`
+  );
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   return (
     <div className="max-w-2xl w-full mx-auto space-y-6">
@@ -103,11 +108,10 @@ export default function OrderDetails({ orderId }: { orderId: string }) {
               </p>
             )}
             <a
-              href="#"
+              href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4"
-              tabIndex={-1}
             >
               <Button variant="whatsapp">
                 Contactar por WhatsApp

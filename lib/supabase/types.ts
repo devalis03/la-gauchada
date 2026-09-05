@@ -14,6 +14,7 @@ export interface Database {
           subcategory: string | null
           stock: number
           featured: boolean
+          active: boolean
           created_at: string
           updated_at: string
         }
@@ -27,6 +28,7 @@ export interface Database {
           subcategory?: string | null
           stock?: number
           featured?: boolean
+          active?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -40,6 +42,7 @@ export interface Database {
           subcategory?: string | null
           stock?: number
           featured?: boolean
+          active?: boolean
           created_at?: string
           updated_at?: string
         }
