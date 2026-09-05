@@ -50,6 +50,8 @@ const emptyProductForm: ProductForm = {
   const [activeTab, setActiveTab] = useState<"stock" | "products" | "orders">("stock")
   const [adminProducts, setAdminProducts] = useState<Product[]>([])
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [isProductFormOpen, setIsProductFormOpen] = useState(false)
   const [productError, setProductError] = useState<string | null>(null)
@@ -58,6 +60,12 @@ const emptyProductForm: ProductForm = {
   const [stats, setStats] = useState<OrderStats | null>(null)
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview)
+    }
+  }, [imagePreview])
 
   const handleLogout = async () => {
     await fetch("/api/admin/logout", { method: "POST" })
@@ -86,6 +94,8 @@ const emptyProductForm: ProductForm = {
   const openNewProductForm = () => {
     setEditingProductId(null)
     setProductForm(emptyProductForm)
+    setSelectedImageFile(null)
+    setImagePreview(emptyProductForm.image)
     setProductError(null)
     setIsProductFormOpen(true)
   }
@@ -93,6 +103,8 @@ const emptyProductForm: ProductForm = {
   const openEditProductForm = (product: Product) => {
     setEditingProductId(product.id)
     setProductForm({ ...product, subcategory: product.subcategory ?? null, active: product.active !== false, featured: product.featured === true })
+    setSelectedImageFile(null)
+    setImagePreview(product.image)
     setProductError(null)
     setIsProductFormOpen(true)
   }
@@ -101,13 +113,38 @@ const emptyProductForm: ProductForm = {
     setProductForm((previous) => ({ ...previous, [field]: value }))
   }
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    setSelectedImageFile(file)
+    if (file) setImagePreview(URL.createObjectURL(file))
+  }
+
   const handleProductSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setProductError(null)
+
+    let image = productForm.image
+    if (selectedImageFile) {
+      const imageData = new FormData()
+      imageData.append("file", selectedImageFile)
+      imageData.append("productId", productForm.id)
+
+      const imageResponse = await fetch("/api/admin/product-images", {
+        method: "POST",
+        body: imageData,
+      })
+      const imagePayload = await imageResponse.json() as { data?: { url: string }; error?: string }
+      if (!imageResponse.ok || !imagePayload.data?.url) {
+        setProductError(imagePayload.error ?? "No se pudo subir la imagen")
+        return
+      }
+      image = imagePayload.data.url
+    }
+
     const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/products", {
       method: editingProductId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(productForm),
+      body: JSON.stringify({ ...productForm, image }),
     })
     const payload = await response.json() as { data?: Product; error?: string }
     if (!response.ok || !payload.data) {
@@ -303,7 +340,7 @@ const emptyProductForm: ProductForm = {
               <Card>
                 <CardHeader>
                   <CardTitle>{editingProductId ? "Editar producto" : "Nuevo producto"}</CardTitle>
-                  <CardDescription>Usá una URL de imagen pública, por ejemplo /images/mate-madera.jpg.</CardDescription>
+                  <CardDescription>Seleccioná una imagen JPG, PNG o WEBP de hasta 5 MB.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={(event) => void handleProductSubmit(event)} className="grid gap-4 md:grid-cols-2">
@@ -312,7 +349,17 @@ const emptyProductForm: ProductForm = {
                     <Textarea className="md:col-span-2" placeholder="Descripción" value={productForm.description} onChange={(event) => handleProductFormChange("description", event.target.value)} required />
                     <Input type="number" min="0" step="0.01" placeholder="Precio" value={productForm.price} onChange={(event) => handleProductFormChange("price", Number(event.target.value))} required />
                     <Input type="number" min="0" step="1" placeholder="Stock" value={productForm.stock} onChange={(event) => handleProductFormChange("stock", Number(event.target.value))} required />
-                    <Input className="md:col-span-2" placeholder="URL de imagen" value={productForm.image} onChange={(event) => handleProductFormChange("image", event.target.value)} required />
+                    <div className="md:col-span-2 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center">
+                      <div className="relative h-24 w-24 overflow-hidden rounded-md border bg-muted">
+                        <Image src={imagePreview} alt="Vista previa del producto" fill className="object-cover" sizes="96px" />
+                      </div>
+                      <div className="space-y-1">
+                        <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} />
+                        <p className="text-xs text-muted-foreground">
+                          {selectedImageFile ? selectedImageFile.name : editingProductId ? "Conserva la imagen actual si no seleccionás otra." : "Se usará la imagen predeterminada si no seleccionás otra."}
+                        </p>
+                      </div>
+                    </div>
                     <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.category} onChange={(event) => handleProductFormChange("category", event.target.value)}>
                       {CATEGORIES.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                     </select>
