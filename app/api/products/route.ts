@@ -52,7 +52,7 @@ function validateProductInput(body: Partial<Product>) {
     image: body.image.trim(),
     category: body.category as Product["category"],
     subcategory: body.subcategory ?? null,
-    stock: body.stock,
+    stock: body.category === "promos" ? 0 : body.stock,
     featured: body.featured === true,
     active: body.active !== false,
   }

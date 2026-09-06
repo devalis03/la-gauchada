@@ -132,13 +132,25 @@ const categoryPrefixes: Record<Product["category"], string> = {
   }
 
   const handleProductFormChange = (field: keyof ProductForm, value: string | number | boolean | null) => {
-    setProductForm((previous) => ({ ...previous, [field]: value }))
+    setProductForm((previous) => ({
+      ...previous,
+      [field]: value,
+      ...(field === "category" && value === "promos" ? { stock: 0 } : {}),
+    }))
   }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null
     setSelectedImageFile(file)
     if (file) setImagePreview(URL.createObjectURL(file))
+  }
+
+  const getCalculatedBundleStock = () => {
+    if (bundleComponents.length === 0) return 0
+    return Math.min(...bundleComponents.map((component) => {
+      const product = adminProducts.find((item) => item.id === component.productId)
+      return product ? Math.floor(product.stock / component.quantity) : 0
+    }))
   }
 
   const handleProductSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -402,7 +414,13 @@ const categoryPrefixes: Record<Product["category"], string> = {
                     <Input placeholder="Nombre" value={productForm.name} onChange={(event) => handleProductFormChange("name", event.target.value)} required />
                     <Textarea className="md:col-span-2" placeholder="Descripción" value={productForm.description} onChange={(event) => handleProductFormChange("description", event.target.value)} required />
                     <Input type="number" min="0" step="0.01" placeholder="Precio" value={productForm.price} onChange={(event) => handleProductFormChange("price", Number(event.target.value))} required />
-                    <Input type="number" min="0" step="1" placeholder="Stock" value={productForm.stock} onChange={(event) => handleProductFormChange("stock", Number(event.target.value))} required />
+                    {productForm.category === "promos" ? (
+                      <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm">
+                        Stock calculado: {getCalculatedBundleStock()}
+                      </div>
+                    ) : (
+                      <Input type="number" min="0" step="1" placeholder="Stock" value={productForm.stock} onChange={(event) => handleProductFormChange("stock", Number(event.target.value))} required />
+                    )}
                     <div className="md:col-span-2 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center">
                       <div className="relative h-24 w-24 overflow-hidden rounded-md border bg-muted">
                         <Image src={imagePreview} alt="Vista previa del producto" fill className="object-cover" sizes="96px" />
@@ -429,7 +447,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
                               <option value="">Seleccionar producto</option>
                               {adminProducts.filter((product) => product.category !== "promos").map((product) => <option key={product.id} value={product.id}>{product.name} ({product.id})</option>)}
                             </select>
-                            <Input className="w-24" type="number" min="1" step="1" value={component.quantity} onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item))} />
+                            <Input className="w-24" type="number" min="1" step="1" value={component.quantity} aria-label="Cantidad incluida en la promo" title="Cantidad incluida en la promo" onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item))} />
                             <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => previous.filter((_, itemIndex) => itemIndex !== index))}>Quitar</Button>
                           </div>
                         ))}
