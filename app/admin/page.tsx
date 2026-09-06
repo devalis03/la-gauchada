@@ -136,6 +136,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
       ...previous,
       [field]: value,
       ...(field === "category" && value === "promos" ? { stock: 0 } : {}),
+      ...(field === "category" && value !== "mates" ? { subcategory: null } : {}),
     }))
   }
 
@@ -447,19 +448,23 @@ const categoryPrefixes: Record<Product["category"], string> = {
                               <option value="">Seleccionar producto</option>
                               {adminProducts.filter((product) => product.category !== "promos").map((product) => <option key={product.id} value={product.id}>{product.name} ({product.id})</option>)}
                             </select>
-                            <Input className="w-24" type="number" min="1" step="1" value={component.quantity} aria-label="Cantidad incluida en la promo" title="Cantidad incluida en la promo" onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item))} />
+                            <span className="flex h-10 items-center whitespace-nowrap rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground">
+                              {component.quantity} unidad{component.quantity === 1 ? "" : "es"} incluida{component.quantity === 1 ? "" : "s"}
+                            </span>
                             <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => previous.filter((_, itemIndex) => itemIndex !== index))}>Quitar</Button>
                           </div>
                         ))}
                         <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => [...previous, { productId: "", quantity: 1 }])}>Agregar componente</Button>
                       </div>
                     )}
-                    <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.subcategory ?? ""} onChange={(event) => handleProductFormChange("subcategory", event.target.value || null)}>
-                      <option value="">Sin subcategoría</option>
-                      <option value="mates-imperiales">Mates Imperiales</option>
-                      <option value="mates-tradicionales">Mates Tradicionales</option>
-                      <option value="mates-torpedos">Mates Torpedos</option>
-                    </select>
+                    {productForm.category === "mates" && (
+                      <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.subcategory ?? ""} onChange={(event) => handleProductFormChange("subcategory", event.target.value || null)} required>
+                        <option value="" disabled>Seleccionar subcategoría</option>
+                        <option value="mates-imperiales">Mates Imperiales</option>
+                        <option value="mates-tradicionales">Mates Tradicionales</option>
+                        <option value="mates-torpedos">Mates Torpedos</option>
+                      </select>
+                    )}
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={productForm.featured} onChange={(event) => handleProductFormChange("featured", event.target.checked)} /> Destacado</label>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={productForm.active} onChange={(event) => handleProductFormChange("active", event.target.checked)} /> Activo</label>
                     {productError && <p className="md:col-span-2 text-sm text-destructive">{productError}</p>}

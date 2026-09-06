@@ -36,6 +36,8 @@ function validateProductInput(body: Partial<Product>) {
     typeof body.image !== "string" || !body.image.trim() ||
     typeof body.category !== "string" ||
     !["promos", "mates", "materas", "yerberos", "termos", "bombillas", "otros"].includes(body.category) ||
+    (body.category === "mates" && !body.subcategory) ||
+    (body.category !== "mates" && body.subcategory !== undefined && body.subcategory !== null) ||
     (body.subcategory !== undefined && body.subcategory !== null &&
       !["mates-imperiales", "mates-tradicionales", "mates-torpedos"].includes(body.subcategory)) ||
     typeof body.stock !== "number" || !Number.isInteger(body.stock) || body.stock < 0
