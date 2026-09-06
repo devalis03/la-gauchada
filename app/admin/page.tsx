@@ -448,9 +448,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
                               <option value="">Seleccionar producto</option>
                               {adminProducts.filter((product) => product.category !== "promos").map((product) => <option key={product.id} value={product.id}>{product.name} ({product.id})</option>)}
                             </select>
-                            <span className="flex h-10 items-center whitespace-nowrap rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground">
-                              {component.quantity} unidad{component.quantity === 1 ? "" : "es"} incluida{component.quantity === 1 ? "" : "s"}
-                            </span>
+                            <Input className="w-24" type="number" min="1" step="1" value={component.quantity} aria-label="Cantidad incluida" title="Cantidad incluida en la promo" onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item))} />
                             <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => previous.filter((_, itemIndex) => itemIndex !== index))}>Quitar</Button>
                           </div>
                         ))}
