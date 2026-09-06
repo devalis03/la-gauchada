@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createProduct, listProducts } from "@/lib/repositories/products-repo"
+import { createProduct, getNextProductId, listProducts } from "@/lib/repositories/products-repo"
 import type { Product } from "@/lib/types"
 
 export async function GET() {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Datos de producto inválidos" }, { status: 400 })
     }
 
-    const created = await createProduct(product)
+    const created = await createProduct({ ...product, id: await getNextProductId(product.category) })
     return NextResponse.json({ data: created }, { status: 201 })
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo crear el producto"
@@ -31,7 +31,6 @@ export async function POST(request: Request) {
 
 function validateProductInput(body: Partial<Product>) {
   if (
-    typeof body.id !== "string" || !/^[a-z0-9-]+$/.test(body.id) ||
     typeof body.name !== "string" || !body.name.trim() ||
     typeof body.description !== "string" || !body.description.trim() ||
     typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0 ||

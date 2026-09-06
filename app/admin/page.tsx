@@ -29,6 +29,8 @@ type ProductForm = Omit<Product, "active" | "featured" | "subcategory"> & {
   subcategory: Product["subcategory"] | null
 }
 
+type BundleComponent = { productId: string; quantity: number }
+
 const emptyProductForm: ProductForm = {
   id: "",
   name: "",
@@ -42,6 +44,16 @@ const emptyProductForm: ProductForm = {
   active: true,
 }
 
+const categoryPrefixes: Record<Product["category"], string> = {
+  promos: "promo",
+  mates: "mate",
+  materas: "matera",
+  yerberos: "yerbero",
+  termos: "termo",
+  bombillas: "bombilla",
+  otros: "otro",
+}
+
 
   export default function AdminPage() {
   const { products, updateStock } = useCart()
@@ -52,6 +64,7 @@ const emptyProductForm: ProductForm = {
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
+  const [bundleComponents, setBundleComponents] = useState<BundleComponent[]>([])
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [isProductFormOpen, setIsProductFormOpen] = useState(false)
   const [productError, setProductError] = useState<string | null>(null)
@@ -96,17 +109,26 @@ const emptyProductForm: ProductForm = {
     setProductForm(emptyProductForm)
     setSelectedImageFile(null)
     setImagePreview(emptyProductForm.image)
+    setBundleComponents([])
     setProductError(null)
     setIsProductFormOpen(true)
   }
 
-  const openEditProductForm = (product: Product) => {
+  const openEditProductForm = async (product: Product) => {
     setEditingProductId(product.id)
     setProductForm({ ...product, subcategory: product.subcategory ?? null, active: product.active !== false, featured: product.featured === true })
     setSelectedImageFile(null)
     setImagePreview(product.image)
+    setBundleComponents([])
     setProductError(null)
     setIsProductFormOpen(true)
+    if (product.category === "promos") {
+      const response = await fetch(`/api/admin/product-bundles/${product.id}`, { cache: "no-store" })
+      if (response.ok) {
+        const payload = await response.json() as { data?: BundleComponent[] }
+        setBundleComponents(payload.data ?? [])
+      }
+    }
   }
 
   const handleProductFormChange = (field: keyof ProductForm, value: string | number | boolean | null) => {
@@ -123,11 +145,20 @@ const emptyProductForm: ProductForm = {
     event.preventDefault()
     setProductError(null)
 
+    if (productForm.category === "promos" && (
+      bundleComponents.length === 0 ||
+      bundleComponents.some((component) => !component.productId || !Number.isInteger(component.quantity) || component.quantity < 1) ||
+      new Set(bundleComponents.map((component) => component.productId)).size !== bundleComponents.length
+    )) {
+      setProductError("La promo debe tener productos simples válidos y sin repetir")
+      return
+    }
+
     let image = productForm.image
     if (selectedImageFile) {
       const imageData = new FormData()
       imageData.append("file", selectedImageFile)
-      imageData.append("productId", productForm.id)
+      imageData.append("productId", productForm.id || "pending")
 
       const imageResponse = await fetch("/api/admin/product-images", {
         method: "POST",
@@ -150,6 +181,19 @@ const emptyProductForm: ProductForm = {
     if (!response.ok || !payload.data) {
       setProductError(payload.error ?? "No se pudo guardar el producto")
       return
+    }
+
+    if (productForm.category === "promos") {
+      const bundleResponse = await fetch(`/api/admin/product-bundles/${payload.data.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ components: bundleComponents }),
+      })
+      const bundlePayload = await bundleResponse.json() as { error?: string }
+      if (!bundleResponse.ok) {
+        setProductError(bundlePayload.error ?? "No se pudo guardar la composición de la promo")
+        return
+      }
     }
 
     await refreshProductsData()
@@ -248,6 +292,16 @@ const emptyProductForm: ProductForm = {
     return { label: "En Stock", color: "text-primary" }
   }
 
+  const getNextProductIdPreview = () => {
+    const prefix = categoryPrefixes[productForm.category]
+    const numbers = adminProducts
+      .map((product) => product.id.match(new RegExp(`^${prefix}-(\\d+)$`)))
+      .filter((match): match is RegExpMatchArray => match !== null)
+      .map((match) => Number(match[1]))
+    const nextNumber = Math.max(0, ...numbers) + 1
+    return `${prefix}-${String(nextNumber).padStart(3, "0")}`
+  }
+
   const totalProducts = products.length
   const outOfStock = products.filter((p) => p.stock === 0).length
   const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 5).length
@@ -344,7 +398,7 @@ const emptyProductForm: ProductForm = {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={(event) => void handleProductSubmit(event)} className="grid gap-4 md:grid-cols-2">
-                    <Input placeholder="ID único (ej. mate-012)" value={productForm.id} disabled={Boolean(editingProductId)} onChange={(event) => handleProductFormChange("id", event.target.value)} required />
+                    <Input placeholder="Se asigna automáticamente" value={editingProductId ? productForm.id : getNextProductIdPreview()} disabled />
                     <Input placeholder="Nombre" value={productForm.name} onChange={(event) => handleProductFormChange("name", event.target.value)} required />
                     <Textarea className="md:col-span-2" placeholder="Descripción" value={productForm.description} onChange={(event) => handleProductFormChange("description", event.target.value)} required />
                     <Input type="number" min="0" step="0.01" placeholder="Precio" value={productForm.price} onChange={(event) => handleProductFormChange("price", Number(event.target.value))} required />
@@ -363,6 +417,25 @@ const emptyProductForm: ProductForm = {
                     <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.category} onChange={(event) => handleProductFormChange("category", event.target.value)}>
                       {CATEGORIES.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                     </select>
+                    {productForm.category === "promos" && (
+                      <div className="md:col-span-2 space-y-3 rounded-md border p-4">
+                        <div>
+                          <p className="font-medium">Composición de la promo</p>
+                          <p className="text-xs text-muted-foreground">Elegí productos simples y la cantidad incluida.</p>
+                        </div>
+                        {bundleComponents.map((component, index) => (
+                          <div key={`${component.productId}-${index}`} className="flex gap-2">
+                            <select className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm" value={component.productId} onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, productId: event.target.value } : item))}>
+                              <option value="">Seleccionar producto</option>
+                              {adminProducts.filter((product) => product.category !== "promos").map((product) => <option key={product.id} value={product.id}>{product.name} ({product.id})</option>)}
+                            </select>
+                            <Input className="w-24" type="number" min="1" step="1" value={component.quantity} onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item))} />
+                            <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => previous.filter((_, itemIndex) => itemIndex !== index))}>Quitar</Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => [...previous, { productId: "", quantity: 1 }])}>Agregar componente</Button>
+                      </div>
+                    )}
                     <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.subcategory ?? ""} onChange={(event) => handleProductFormChange("subcategory", event.target.value || null)}>
                       <option value="">Sin subcategoría</option>
                       <option value="mates-imperiales">Mates Imperiales</option>

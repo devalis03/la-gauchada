@@ -24,6 +24,17 @@ export interface Subcategory {
 export interface CartItem {
   product: Product
   quantity: number
+  stockItems?: StockItem[]
+}
+
+export interface StockItem {
+  productId: string
+  quantity: number
+}
+
+export interface ProductBundle {
+  productId: string
+  components: { productId: string; quantity: number }[]
 }
 
 export interface CustomerInfo {

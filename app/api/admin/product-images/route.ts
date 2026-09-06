@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const extension = EXTENSIONS[file.type]
-    const path = `${productId}/${Date.now()}.${extension}`
+    const path = `${productId || "pending"}/${Date.now()}.${extension}`
     const supabase = getSupabaseAdminClient()
     const { error: uploadError } = await supabase.storage
       .from("product-images")

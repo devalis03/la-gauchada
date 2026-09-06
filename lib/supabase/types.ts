@@ -150,6 +150,27 @@ export interface Database {
         }
         Relationships: []
       }
+      product_bundles: {
+        Row: {
+          product_id: string
+          components: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          product_id: string
+          components?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          product_id?: string
+          components?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -174,6 +195,14 @@ export interface Database {
       expire_card_order_reservations: {
         Args: Record<string, never>
         Returns: number
+      }
+      reserve_order_stock: {
+        Args: { p_items: Json }
+        Returns: Json
+      }
+      next_product_id: {
+        Args: { p_category: string }
+        Returns: string
       }
     }
     Enums: {
