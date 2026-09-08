@@ -67,7 +67,7 @@ export default function CartPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-8">
           {/* Cart Items */}
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             {items.map((item) => {
               const currentProduct = products.find((p) => p.id === item.product.id)
               const maxStock = currentProduct?.stock ?? item.product.stock
@@ -160,9 +160,9 @@ export default function CartPage() {
             })}
 
             {recommendedProducts.length > 0 && (
-              <section className="pt-8" aria-labelledby="cart-recommendations-title">
-                <div className="mb-4 flex items-center justify-between gap-4">
-                  <div>
+              <section className="min-w-0 overflow-hidden pt-8" aria-labelledby="cart-recommendations-title">
+                <div className="mb-4 flex min-w-0 items-center justify-between gap-4">
+                  <div className="min-w-0">
                     <h2 id="cart-recommendations-title" className="font-serif text-2xl font-bold text-foreground">
                       Por si te puede interesar
                     </h2>
@@ -179,10 +179,10 @@ export default function CartPage() {
                     </Button>
                   </div>
                 </div>
-                <div ref={recommendationsRef} className="flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]">
+                <div ref={recommendationsRef} className="flex min-w-0 max-w-full snap-x gap-3 overflow-x-auto pb-3 [scrollbar-width:thin]">
                   {recommendedProducts.map((product) => (
-                    <div key={product.id} className="w-[min(82vw,280px)] shrink-0 snap-start sm:w-[280px]">
-                      <ProductCard product={product} />
+                    <div key={product.id} className="w-[min(68vw,220px)] shrink-0 snap-start sm:w-[220px]">
+                      <ProductCard product={product} compact />
                     </div>
                   ))}
                 </div>
