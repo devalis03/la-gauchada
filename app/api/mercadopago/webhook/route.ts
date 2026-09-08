@@ -3,6 +3,7 @@ import { MercadoPagoConfig, Payment } from "mercadopago"
 import {
   findOrderByExternalReference,
   registerPaymentNotification,
+  rereserveOrderStockIfNeeded,
   restoreOrderStockIfNeeded,
   setOrderPayment,
 } from "@/lib/repositories/orders-repo"
@@ -63,16 +64,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, ignored: "order not found" }, { status: 200 })
     }
 
-    const isNewNotification = await registerPaymentNotification(paymentId)
-    if (!isNewNotification) {
-      return NextResponse.json({ received: true, duplicate: true }, { status: 200 })
+    const paymentStatus = mapPaymentStatus(payment.status)
+
+    if (paymentStatus === "approved" && order.stockRestored) {
+      await rereserveOrderStockIfNeeded(order.id)
     }
 
-    const paymentStatus = mapPaymentStatus(payment.status)
     await setOrderPayment(order.id, paymentStatus, paymentId)
 
     if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
       await restoreOrderStockIfNeeded(order.id)
+    }
+
+    const isNewNotification = await registerPaymentNotification(paymentId)
+    if (!isNewNotification) {
+      return NextResponse.json({ received: true, duplicate: true }, { status: 200 })
     }
 
     return NextResponse.json({ received: true }, { status: 200 })

@@ -2,14 +2,17 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react"
+import { useRef } from "react"
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/utils"
+import { ProductCard } from "@/components/product-card"
 
 export default function CartPage() {
   const { items, products, removeFromCart, updateQuantity, getCartTotal } = useCart()
+  const recommendationsRef = useRef<HTMLDivElement>(null)
 
   if (items.length === 0) {
     return (
@@ -34,6 +37,18 @@ export default function CartPage() {
   const subtotal = getCartTotal()
   const shipping = subtotal > 50 ? 0 : 8.99
   const total = subtotal + shipping
+  const cartProductIds = new Set(items.map((item) => item.product.id))
+  const recommendedProducts = products
+    .filter((product) => product.active !== false && product.stock > 0 && !cartProductIds.has(product.id))
+    .sort((first, second) => Number(second.featured === true) - Number(first.featured === true))
+    .slice(0, 8)
+
+  const scrollRecommendations = (direction: "left" | "right") => {
+    recommendationsRef.current?.scrollBy({
+      left: direction === "right" ? 320 : -320,
+      behavior: "smooth",
+    })
+  }
 
   return (
     <div className="min-h-screen">
@@ -143,6 +158,36 @@ export default function CartPage() {
                 </Card>
               )
             })}
+
+            {recommendedProducts.length > 0 && (
+              <section className="pt-8" aria-labelledby="cart-recommendations-title">
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <div>
+                    <h2 id="cart-recommendations-title" className="font-serif text-2xl font-bold text-foreground">
+                      Por si te puede interesar
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Otros productos que pueden complementar tu compra
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="icon" title="Recomendaciones anteriores" aria-label="Recomendaciones anteriores" onClick={() => scrollRecommendations("left")}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="outline" size="icon" title="Más recomendaciones" aria-label="Más recomendaciones" onClick={() => scrollRecommendations("right")}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div ref={recommendationsRef} className="flex snap-x gap-4 overflow-x-auto pb-3 [scrollbar-width:thin]">
+                  {recommendedProducts.map((product) => (
+                    <div key={product.id} className="w-[min(82vw,280px)] shrink-0 snap-start sm:w-[280px]">
+                      <ProductCard product={product} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Order Summary */}
