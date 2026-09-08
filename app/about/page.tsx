@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Mail, Phone, MapPin, Instagram, MessageCircle } from "lucide-react"
+import { FaWhatsapp } from "react-icons/fa"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -166,6 +167,15 @@ export default function AboutPage() {
                     aria-label="Instagram"
                   >
                     <Instagram className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="https://wa.me/5493815764026?text=Hola%2C%20quiero%20conocer%20m%C3%A1s%20sobre%20los%20productos%20de%20La%20Gauchada."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                    aria-label="WhatsApp"
+                  >
+                    <FaWhatsapp className="h-5 w-5" />
                   </a>
                 </div>
               </div>

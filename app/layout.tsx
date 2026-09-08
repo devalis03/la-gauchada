@@ -22,6 +22,11 @@ export const metadata: Metadata = {
   title: 'La Gauchada | Yerba Mate Premium y Accesorios',
   description: 'Descubre auténtica yerba mate sudamericana, calabazas tradicionales, termos, bombillas y accesorios. Vive el ritual perfecto del mate.',
   keywords: ['yerba mate', 'calabaza mate', 'bombilla', 'termo', 'mate argentino', 'mate sudamericano'],
+  icons: {
+    icon: '/images/logo.png',
+    shortcut: '/images/logo.png',
+    apple: '/images/logo.png',
+  },
 }
 
 export const viewport: Viewport = {
