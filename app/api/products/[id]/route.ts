@@ -1,36 +1,35 @@
 import { NextResponse } from "next/server"
-import { createProduct, getNextProductId, listProducts } from "@/lib/repositories/products-repo"
+import { updateProduct } from "@/lib/repositories/products-repo"
 import type { Product } from "@/lib/types"
 
-export async function GET() {
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const products = await listProducts()
-    return NextResponse.json({ data: products }, { status: 200 })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error"
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
-}
-
-export async function POST(request: Request) {
-  try {
+    const { id } = await context.params
     const body = (await request.json()) as Partial<Product>
-    const product = validateProductInput(body)
+    const input = validateProductInput(body)
 
-    if (!product) {
+    if (!input) {
       return NextResponse.json({ error: "Datos de producto inválidos" }, { status: 400 })
     }
 
-    const created = await createProduct({ ...product, id: await getNextProductId(product.category) })
-    return NextResponse.json({ data: created }, { status: 201 })
+    const updated = await updateProduct(id, input)
+    if (!updated) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
+    }
+
+    return NextResponse.json({ data: updated }, { status: 200 })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "No se pudo crear el producto"
+    const message = error instanceof Error ? error.message : "No se pudo actualizar el producto"
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
 function validateProductInput(body: Partial<Product>) {
   if (
+    typeof body.id !== "string" ||
     typeof body.name !== "string" || !body.name.trim() ||
     typeof body.description !== "string" || !body.description.trim() ||
     typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0 ||
@@ -47,7 +46,6 @@ function validateProductInput(body: Partial<Product>) {
   }
 
   return {
-    id: body.id,
     name: body.name.trim(),
     description: body.description.trim(),
     price: body.price,

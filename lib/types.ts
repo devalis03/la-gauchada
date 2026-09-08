@@ -8,6 +8,7 @@ export interface Product {
   subcategory?: SubcategoryId
   stock: number
   featured?: boolean
+  active?: boolean
 }
 
 export type Category = "promos" | "mates" | "materas" | "yerberos" | "termos" | "bombillas" | "otros"
@@ -23,6 +24,17 @@ export interface Subcategory {
 export interface CartItem {
   product: Product
   quantity: number
+  stockItems?: StockItem[]
+}
+
+export interface StockItem {
+  productId: string
+  quantity: number
+}
+
+export interface ProductBundle {
+  productId: string
+  components: { productId: string; quantity: number }[]
 }
 
 export interface CustomerInfo {

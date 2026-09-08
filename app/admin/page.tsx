@@ -4,10 +4,11 @@ import { formatPrice } from "@/lib/utils"
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut } from "lucide-react"
+import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut, Plus, Pencil, Power } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
 import { CATEGORIES } from "@/lib/types"
 import { initialProducts } from "@/lib/products"
@@ -20,18 +21,64 @@ import {
   type Order,
   type OrderStats
 } from "@/lib/order-service"
+import type { Product } from "@/lib/types"
+
+type ProductForm = Omit<Product, "active" | "featured" | "subcategory"> & {
+  active: boolean
+  featured: boolean
+  subcategory: Product["subcategory"] | null
+}
+
+type BundleComponent = { productId: string; quantity: number }
+
+const emptyProductForm: ProductForm = {
+  id: "",
+  name: "",
+  description: "",
+  price: 0,
+  image: "/images/otros.jpg",
+  category: "otros",
+  subcategory: null,
+  stock: 0,
+  featured: false,
+  active: true,
+}
+
+const categoryPrefixes: Record<Product["category"], string> = {
+  promos: "promo",
+  mates: "mate",
+  materas: "matera",
+  yerberos: "yerbero",
+  termos: "termo",
+  bombillas: "bombilla",
+  otros: "otro",
+}
 
 
   export default function AdminPage() {
   const { products, updateStock } = useCart()
   const [editedStocks, setEditedStocks] = useState<Record<string, number>>({})
   const [savedProducts, setSavedProducts] = useState<Set<string>>(new Set())
-  const [activeTab, setActiveTab] = useState<"stock" | "orders">("stock")
+  const [activeTab, setActiveTab] = useState<"stock" | "products" | "orders">("stock")
+  const [adminProducts, setAdminProducts] = useState<Product[]>([])
+  const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
+  const [bundleComponents, setBundleComponents] = useState<BundleComponent[]>([])
+  const [editingProductId, setEditingProductId] = useState<string | null>(null)
+  const [isProductFormOpen, setIsProductFormOpen] = useState(false)
+  const [productError, setProductError] = useState<string | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [pendingTransferences, setPendingTransferences] = useState<Order[]>([])
   const [stats, setStats] = useState<OrderStats | null>(null)
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview)
+    }
+  }, [imagePreview])
 
   const handleLogout = async () => {
     await fetch("/api/admin/logout", { method: "POST" })
@@ -48,6 +95,131 @@ import {
     setOrders(allOrders)
     setPendingTransferences(pending)
     setStats(orderStats)
+  }
+
+  const refreshProductsData = async () => {
+    const response = await fetch("/api/admin/products", { cache: "no-store" })
+    if (!response.ok) return
+    const payload = await response.json() as { data?: Product[] }
+    if (payload.data) setAdminProducts(payload.data)
+  }
+
+  const openNewProductForm = () => {
+    setEditingProductId(null)
+    setProductForm(emptyProductForm)
+    setSelectedImageFile(null)
+    setImagePreview(emptyProductForm.image)
+    setBundleComponents([])
+    setProductError(null)
+    setIsProductFormOpen(true)
+  }
+
+  const openEditProductForm = async (product: Product) => {
+    setEditingProductId(product.id)
+    setProductForm({ ...product, subcategory: product.subcategory ?? null, active: product.active !== false, featured: product.featured === true })
+    setSelectedImageFile(null)
+    setImagePreview(product.image)
+    setBundleComponents([])
+    setProductError(null)
+    setIsProductFormOpen(true)
+    if (product.category === "promos") {
+      const response = await fetch(`/api/admin/product-bundles/${product.id}`, { cache: "no-store" })
+      if (response.ok) {
+        const payload = await response.json() as { data?: BundleComponent[] }
+        setBundleComponents(payload.data ?? [])
+      }
+    }
+  }
+
+  const handleProductFormChange = (field: keyof ProductForm, value: string | number | boolean | null) => {
+    setProductForm((previous) => ({
+      ...previous,
+      [field]: value,
+      ...(field === "category" && value === "promos" ? { stock: 0 } : {}),
+      ...(field === "category" && value !== "mates" ? { subcategory: null } : {}),
+    }))
+  }
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    setSelectedImageFile(file)
+    if (file) setImagePreview(URL.createObjectURL(file))
+  }
+
+  const getCalculatedBundleStock = () => {
+    if (bundleComponents.length === 0) return 0
+    return Math.min(...bundleComponents.map((component) => {
+      const product = adminProducts.find((item) => item.id === component.productId)
+      return product ? Math.floor(product.stock / component.quantity) : 0
+    }))
+  }
+
+  const handleProductSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setProductError(null)
+
+    if (productForm.category === "promos" && (
+      bundleComponents.length === 0 ||
+      bundleComponents.some((component) => !component.productId || !Number.isInteger(component.quantity) || component.quantity < 1) ||
+      new Set(bundleComponents.map((component) => component.productId)).size !== bundleComponents.length
+    )) {
+      setProductError("La promo debe tener productos simples válidos y sin repetir")
+      return
+    }
+
+    let image = productForm.image
+    if (selectedImageFile) {
+      const imageData = new FormData()
+      imageData.append("file", selectedImageFile)
+      imageData.append("productId", productForm.id || "pending")
+
+      const imageResponse = await fetch("/api/admin/product-images", {
+        method: "POST",
+        body: imageData,
+      })
+      const imagePayload = await imageResponse.json() as { data?: { url: string }; error?: string }
+      if (!imageResponse.ok || !imagePayload.data?.url) {
+        setProductError(imagePayload.error ?? "No se pudo subir la imagen")
+        return
+      }
+      image = imagePayload.data.url
+    }
+
+    const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/products", {
+      method: editingProductId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...productForm, image }),
+    })
+    const payload = await response.json() as { data?: Product; error?: string }
+    if (!response.ok || !payload.data) {
+      setProductError(payload.error ?? "No se pudo guardar el producto")
+      return
+    }
+
+    if (productForm.category === "promos") {
+      const bundleResponse = await fetch(`/api/admin/product-bundles/${payload.data.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ components: bundleComponents }),
+      })
+      const bundlePayload = await bundleResponse.json() as { error?: string }
+      if (!bundleResponse.ok) {
+        setProductError(bundlePayload.error ?? "No se pudo guardar la composición de la promo")
+        return
+      }
+    }
+
+    await refreshProductsData()
+    setIsProductFormOpen(false)
+  }
+
+  const handleToggleProduct = async (product: Product) => {
+    const response = await fetch(`/api/admin/products/${product.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, active: product.active === false }),
+    })
+    if (response.ok) await refreshProductsData()
   }
 
   const handleStockChange = (productId: string, value: string) => {
@@ -104,6 +276,7 @@ import {
   // Load orders on component mount
   useEffect(() => {
     void refreshOrdersData()
+    void refreshProductsData()
   }, [])
 
   const handleConfirmTransference = async (orderId: string) => {
@@ -130,6 +303,16 @@ import {
     if (stock === 0) return { label: "Sin Stock", color: "text-destructive" }
     if (stock <= 5) return { label: "Stock Bajo", color: "text-accent" }
     return { label: "En Stock", color: "text-primary" }
+  }
+
+  const getNextProductIdPreview = () => {
+    const prefix = categoryPrefixes[productForm.category]
+    const numbers = adminProducts
+      .map((product) => product.id.match(new RegExp(`^${prefix}-(\\d+)$`)))
+      .filter((match): match is RegExpMatchArray => match !== null)
+      .map((match) => Number(match[1]))
+    const nextNumber = Math.max(0, ...numbers) + 1
+    return `${prefix}-${String(nextNumber).padStart(3, "0")}`
   }
 
   const totalProducts = products.length
@@ -181,6 +364,16 @@ import {
             Gestión de Stock
           </button>
           <button
+            onClick={() => setActiveTab("products")}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === "products"
+                ? "border-b-2 border-primary text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Productos
+          </button>
+          <button
             onClick={() => setActiveTab("orders")}
             className={`px-4 py-2 font-medium transition-colors ${
               activeTab === "orders"
@@ -196,6 +389,105 @@ import {
             )}
           </button>
         </div>
+
+        {activeTab === "products" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Catálogo</h2>
+                <p className="text-sm text-muted-foreground">Administra productos simples. Las promos se agregarán en una etapa separada.</p>
+              </div>
+              <Button onClick={openNewProductForm} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nuevo
+              </Button>
+            </div>
+
+            {isProductFormOpen && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editingProductId ? "Editar producto" : "Nuevo producto"}</CardTitle>
+                  <CardDescription>Seleccioná una imagen JPG, PNG o WEBP de hasta 5 MB.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={(event) => void handleProductSubmit(event)} className="grid gap-4 md:grid-cols-2">
+                    <Input placeholder="Se asigna automáticamente" value={editingProductId ? productForm.id : getNextProductIdPreview()} disabled />
+                    <Input placeholder="Nombre" value={productForm.name} onChange={(event) => handleProductFormChange("name", event.target.value)} required />
+                    <Textarea className="md:col-span-2" placeholder="Descripción" value={productForm.description} onChange={(event) => handleProductFormChange("description", event.target.value)} required />
+                    <Input type="number" min="0" step="0.01" placeholder="Precio" value={productForm.price} onChange={(event) => handleProductFormChange("price", Number(event.target.value))} required />
+                    {productForm.category === "promos" ? (
+                      <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm">
+                        Stock calculado: {getCalculatedBundleStock()}
+                      </div>
+                    ) : (
+                      <Input type="number" min="0" step="1" placeholder="Stock" value={productForm.stock} onChange={(event) => handleProductFormChange("stock", Number(event.target.value))} required />
+                    )}
+                    <div className="md:col-span-2 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-center">
+                      <div className="relative h-24 w-24 overflow-hidden rounded-md border bg-muted">
+                        <Image src={imagePreview} alt="Vista previa del producto" fill className="object-cover" sizes="96px" />
+                      </div>
+                      <div className="space-y-1">
+                        <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} />
+                        <p className="text-xs text-muted-foreground">
+                          {selectedImageFile ? selectedImageFile.name : editingProductId ? "Conserva la imagen actual si no seleccionás otra." : "Se usará la imagen predeterminada si no seleccionás otra."}
+                        </p>
+                      </div>
+                    </div>
+                    <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.category} onChange={(event) => handleProductFormChange("category", event.target.value)}>
+                      {CATEGORIES.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                    </select>
+                    {productForm.category === "promos" && (
+                      <div className="md:col-span-2 space-y-3 rounded-md border p-4">
+                        <div>
+                          <p className="font-medium">Composición de la promo</p>
+                          <p className="text-xs text-muted-foreground">Elegí productos simples y la cantidad incluida.</p>
+                        </div>
+                        {bundleComponents.map((component, index) => (
+                          <div key={`${component.productId}-${index}`} className="flex gap-2">
+                            <select className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm" value={component.productId} onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, productId: event.target.value } : item))}>
+                              <option value="">Seleccionar producto</option>
+                              {adminProducts.filter((product) => product.category !== "promos").map((product) => <option key={product.id} value={product.id}>{product.name} ({product.id})</option>)}
+                            </select>
+                            <Input className="w-24" type="number" min="1" step="1" value={component.quantity} aria-label="Cantidad incluida" title="Cantidad incluida en la promo" onChange={(event) => setBundleComponents((previous) => previous.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(event.target.value) } : item))} />
+                            <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => previous.filter((_, itemIndex) => itemIndex !== index))}>Quitar</Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" onClick={() => setBundleComponents((previous) => [...previous, { productId: "", quantity: 1 }])}>Agregar componente</Button>
+                      </div>
+                    )}
+                    {productForm.category === "mates" && (
+                      <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.subcategory ?? ""} onChange={(event) => handleProductFormChange("subcategory", event.target.value || null)} required>
+                        <option value="" disabled>Seleccionar subcategoría</option>
+                        <option value="mates-imperiales">Mates Imperiales</option>
+                        <option value="mates-tradicionales">Mates Tradicionales</option>
+                        <option value="mates-torpedos">Mates Torpedos</option>
+                      </select>
+                    )}
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={productForm.featured} onChange={(event) => handleProductFormChange("featured", event.target.checked)} /> Destacado</label>
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={productForm.active} onChange={(event) => handleProductFormChange("active", event.target.checked)} /> Activo</label>
+                    {productError && <p className="md:col-span-2 text-sm text-destructive">{productError}</p>}
+                    <div className="md:col-span-2 flex gap-2">
+                      <Button type="submit">Guardar producto</Button>
+                      <Button type="button" variant="outline" onClick={() => setIsProductFormOpen(false)}>Cancelar</Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {adminProducts.map((product) => (
+                <Card key={product.id} className={product.active === false ? "opacity-60" : undefined}>
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted"><Image src={product.image} alt={product.name} fill className="object-cover" sizes="64px" /></div>
+                    <div className="min-w-0 flex-1"><h3 className="truncate font-medium">{product.name}</h3><p className="text-sm text-muted-foreground">{product.id} · {formatPrice(product.price)} · Stock: {product.stock}</p><p className="text-xs text-muted-foreground">{product.active === false ? "Inactivo" : "Activo"}</p></div>
+                    <div className="flex gap-2"><Button size="icon" variant="outline" title="Editar producto" onClick={() => openEditProductForm(product)}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="outline" title="Activar o desactivar producto" onClick={() => void handleToggleProduct(product)}><Power className="h-4 w-4" /></Button></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stock Tab */}
         {activeTab === "stock" && (

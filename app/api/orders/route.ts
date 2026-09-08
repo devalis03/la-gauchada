@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import type { Order } from "@/lib/types"
 import { createOrderRecord, listOrders } from "@/lib/repositories/orders-repo"
 import {
-  decrementProductStock,
-  incrementProductStock,
   listProducts,
+  reserveOrderStock,
 } from "@/lib/repositories/products-repo"
 
 export async function GET() {
@@ -64,34 +63,29 @@ export async function POST(req: NextRequest) {
       total: subtotal + shipping,
     }
 
-    // Reserva stock de forma atómica; si algún producto falla, se libera lo ya reservado.
-    const reserved: { productId: string; quantity: number }[] = []
-    for (const item of order.items) {
-      const ok = await decrementProductStock(item.product.id, item.quantity)
-      if (!ok) {
-        for (const previous of reserved) {
-          await incrementProductStock(previous.productId, previous.quantity)
-        }
-        return NextResponse.json(
-          {
-            error: "Stock insuficiente",
-            productId: item.product.id,
-            productName: item.product.name,
-          },
-          { status: 409 }
-        )
+    let stockItems
+    try {
+      stockItems = await reserveOrderStock(
+        order.items.map((item) => ({ productId: item.product.id, quantity: item.quantity }))
+      )
+    } catch (reservationError) {
+      if (reservationError instanceof Error && reservationError.message.includes("Stock insuficiente")) {
+        return NextResponse.json({ error: "Stock insuficiente" }, { status: 409 })
       }
-      reserved.push({ productId: item.product.id, quantity: item.quantity })
+      throw reservationError
     }
+
+    order.items = order.items.map((item, index) => (
+      index === 0 ? { ...item, stockItems } : item
+    ))
 
     try {
       const created = await createOrderRecord(order)
       return NextResponse.json({ data: created }, { status: 201 })
     } catch (createError) {
-      // El pedido no se pudo guardar; libera el stock reservado.
-      for (const previous of reserved) {
-        await incrementProductStock(previous.productId, previous.quantity)
-      }
+      // La RPC de restauración es idempotente y devuelve el stock reservado.
+      const supabase = await import("@/lib/supabase/server")
+      await supabase.getSupabaseAdminClient().rpc("restore_order_stock", { p_order_id: order.id })
       throw createError
     }
   } catch (error) {

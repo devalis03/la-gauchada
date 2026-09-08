@@ -129,6 +129,30 @@ export async function setOrderStatus(
     updatePayload.transference_status = transferenceStatus ?? null
   }
 
+  if (status === "delivered") {
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .select("payment_method")
+      .eq("id", orderId)
+      .maybeSingle()
+
+    if (orderError) {
+      throw new Error(`Failed to fetch order payment method: ${orderError.message}`)
+    }
+
+    if (order?.payment_method === "efectivo") {
+      updatePayload.payment_status = "approved"
+    }
+  }
+
+  if (transferenceStatus === "confirmado") {
+    updatePayload.payment_status = "approved"
+  }
+
+  if (transferenceStatus === "rechazado") {
+    updatePayload.payment_status = "rejected"
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .update(updatePayload)
