@@ -233,6 +233,19 @@ export async function restoreOrderStockIfNeeded(orderId: string): Promise<boolea
   return data === true
 }
 
+export async function rereserveOrderStockIfNeeded(orderId: string): Promise<boolean> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase.rpc("rereserve_order_stock", {
+    p_order_id: orderId,
+  })
+
+  if (error) {
+    throw new Error(`Failed to re-reserve order stock: ${error.message}`)
+  }
+
+  return data === true
+}
+
 export async function expireCardOrderReservations(): Promise<number> {
   const supabase = getSupabaseAdminClient()
   const { data, error } = await supabase.rpc("expire_card_order_reservations")

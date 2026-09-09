@@ -11,9 +11,10 @@ import { formatPrice } from "@/lib/utils"
 
 interface ProductCardProps {
   product: Product
+  compact?: boolean
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, compact = false }: ProductCardProps) {
   const { addToCart, products } = useCart()
   const [isAdded, setIsAdded] = useState(false)
   const [error, setError] = useState(false)
@@ -38,8 +39,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const isLowStock = stock > 0 && stock <= 5
 
   return (
-    <Card className="group overflow-hidden transition-shadow hover:shadow-lg">
-      <div className="relative aspect-square overflow-hidden bg-muted">
+    <Card className={`group h-full overflow-hidden transition-shadow hover:shadow-lg ${compact ? "flex flex-col" : ""}`}>
+      <div className={`relative overflow-hidden bg-muted ${compact ? "aspect-[4/3]" : "aspect-square"}`}>
         <Image
           src={product.image}
           alt={product.name}
@@ -58,9 +59,9 @@ export function ProductCard({ product }: ProductCardProps) {
           </span>
         )}
       </div>
-      <CardContent className="p-4">
+      <CardContent className={`flex flex-1 flex-col ${compact ? "p-3" : "p-4"}`}>
         <h3 className="font-medium text-foreground line-clamp-1">{product.name}</h3>
-        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+        <p className="mt-1 min-h-10 text-sm text-muted-foreground line-clamp-2">
           {product.description}
         </p>
         <div className="mt-3 flex items-center justify-between">

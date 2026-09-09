@@ -204,6 +204,10 @@ export interface Database {
         Args: { p_category: string }
         Returns: string
       }
+      rereserve_order_stock: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
