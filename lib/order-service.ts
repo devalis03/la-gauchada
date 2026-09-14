@@ -78,7 +78,7 @@ export async function getAllOrders(): Promise<Order[]> {
 }
 
 export async function getOrderById(orderId: string): Promise<Order | null> {
-  const response = await fetch(`${ORDERS_API_BASE}/${orderId}`, {
+  const response = await fetch(`${ORDERS_API_BASE}/lookup?orderId=${encodeURIComponent(orderId)}`, {
     method: "GET",
     cache: "no-store",
   })
@@ -107,7 +107,7 @@ export async function updateOrderStatus(
   status: Order["status"],
   transferenceStatus?: Order["transferenceStatus"]
 ): Promise<Order | null> {
-  const response = await fetch(`${ORDERS_API_BASE}/${orderId}/status`, {
+  const response = await fetch(`${ORDERS_API_BASE}/status?orderId=${encodeURIComponent(orderId)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

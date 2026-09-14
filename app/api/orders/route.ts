@@ -5,6 +5,7 @@ import {
   listProducts,
   reserveOrderStock,
 } from "@/lib/repositories/products-repo"
+import { sendOrderConfirmationEmails } from "@/lib/email-service"
 
 export async function GET() {
   try {
@@ -81,6 +82,15 @@ export async function POST(req: NextRequest) {
 
     try {
       const created = await createOrderRecord(order)
+
+      if (created.paymentMethod === "efectivo") {
+        try {
+          await sendOrderConfirmationEmails(created)
+        } catch (emailError) {
+          console.error("Order confirmation email error:", emailError)
+        }
+      }
+
       return NextResponse.json({ data: created }, { status: 201 })
     } catch (createError) {
       // La RPC de restauración es idempotente y devuelve el stock reservado.

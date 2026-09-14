@@ -16,6 +16,10 @@ function isProtectedAdminRequest(request: NextRequest) {
     return true
   }
 
+  if (pathname === "/api/orders/status") {
+    return true
+  }
+
   if (pathname === "/api/products" && request.method !== "GET") {
     return true
   }
