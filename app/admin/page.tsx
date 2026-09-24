@@ -51,6 +51,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
   yerberos: "yerbero",
   termos: "termo",
   bombillas: "bombilla",
+  "cuchillos-tablas": "cuchillo",
+  "boinas-ponchos": "boina",
   otros: "otro",
 }
 
@@ -556,8 +558,6 @@ const categoryPrefixes: Record<Product["category"], string> = {
             {/* Product List by Category */}
             {CATEGORIES.map((category) => {
               const categoryProducts = products.filter((p) => p.category === category.id)
-              if (categoryProducts.length === 0) return null
-
               return (
                 <Card key={category.id} className="mb-6">
                   <CardHeader>
@@ -565,7 +565,9 @@ const categoryPrefixes: Record<Product["category"], string> = {
                     <CardDescription>{category.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    {categoryProducts.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No hay productos cargados en esta categoría.</p>
+                    ) : <div className="space-y-4">
                       {categoryProducts.map((product) => {
                         const currentStock = editedStocks[product.id] ?? product.stock
                         const status = 
@@ -645,7 +647,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
                           </div>
                         )
                       })}
-                    </div>
+                    </div>}
                   </CardContent>
                 </Card>
               )

@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import { Resend } from "resend"
 import type { Order } from "@/lib/types"
+import { getCartItemPrice } from "@/lib/cart-pricing"
 
 const DEFAULT_ADMIN_EMAIL = "lagauchadamates@gmail.com"
 const DEFAULT_FROM_EMAIL = "onboarding@resend.dev"
@@ -69,11 +70,11 @@ function getPaymentMethodLabel(order: Order) {
 function getOrderItemsHtml(order: Order) {
   return order.items
     .map(
-      ({ product, quantity }) => `
+      (item) => `
         <tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">${escapeHtml(product.name)}</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: center;">${quantity}</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(product.price * quantity)}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product.name)}${item.selectedColor ? ` (${item.selectedColor === "marron" ? "Marrón" : "Negro"})` : ""}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(getCartItemPrice(item) * item.quantity)}</td>
         </tr>`,
     )
     .join("")
@@ -177,10 +178,11 @@ async function createInvoiceAttachment(order: Order): Promise<EmailAttachment> {
   y -= 20
 
   for (const item of order.items) {
-    const productName = item.product.name.length > 52 ? `${item.product.name.slice(0, 49)}...` : item.product.name
+    const productLabel = `${item.product.name}${item.selectedColor ? ` (${item.selectedColor === "marron" ? "Marrón" : "Negro"})` : ""}`
+    const productName = productLabel.length > 52 ? `${productLabel.slice(0, 49)}...` : productLabel
     page.drawText(productName, { x: 48, y, size: 9, font: regularFont, color: dark })
     page.drawText(String(item.quantity), { x: 400, y, size: 9, font: regularFont, color: dark })
-    page.drawText(formatCurrency(item.product.price * item.quantity), { x: 475, y, size: 9, font: regularFont, color: dark })
+    page.drawText(formatCurrency(getCartItemPrice(item) * item.quantity), { x: 475, y, size: 9, font: regularFont, color: dark })
     y -= 18
   }
 

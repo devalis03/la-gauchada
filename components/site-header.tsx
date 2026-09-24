@@ -69,7 +69,7 @@ export function SiteHeader() {
               {/* Header Section */}
               <div className="border-b border-border bg-gradient-to-r from-primary/5 to-primary/10 px-6 py-6">
                 <SheetTitle className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary overflow-hidden">
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-border bg-background">
                     <Image src="/images/logo.png" alt="La Gauchada" width={40} height={40} className="h-10 w-10 object-cover" />
                   </div>
                   <span className="font-serif text-lg font-semibold">La Gauchada</span>
@@ -87,7 +87,6 @@ export function SiteHeader() {
                       index === 0 ? "text-foreground hover:bg-primary/10" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     }`}
                   >
-                    <span className="flex h-2 w-2 rounded-full bg-primary"></span>
                     {item.name}
                   </Link>
                 ))}
@@ -102,7 +101,6 @@ export function SiteHeader() {
                   className="flex items-center justify-between rounded-lg px-4 py-3 text-base font-medium text-muted-foreground transition-all duration-200 hover:bg-secondary hover:text-foreground"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-2 w-2 rounded-full bg-primary"></span>
                     Carrito
                   </div>
                   {cartCount > 0 && (

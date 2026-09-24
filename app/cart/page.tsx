@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/utils"
 import { ProductCard } from "@/components/product-card"
+import { getCartItemPrice, getRecommendedPrice, hasMateInCart, PICO_DE_ORO_ID } from "@/lib/cart-pricing"
 
 export default function CartPage() {
   const { items, products, removeFromCart, updateQuantity, getCartTotal } = useCart()
@@ -37,6 +38,7 @@ export default function CartPage() {
   const subtotal = getCartTotal()
   const shipping = subtotal > 50 ? 0 : 8.99
   const total = subtotal + shipping
+  const hasMate = hasMateInCart(items)
   const cartProductIds = new Set(items.map((item) => item.product.id))
   const recommendedProducts = products
     .filter((product) => product.active !== false && product.stock > 0 && !cartProductIds.has(product.id))
@@ -74,7 +76,7 @@ export default function CartPage() {
               const isOverStock = item.quantity > maxStock
 
               return (
-                <Card key={item.product.id} className={isOverStock ? "border-destructive" : ""}>
+                <Card key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.priceOverride ?? "regular"}`} className={isOverStock ? "border-destructive" : ""}>
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       {/* Image */}
@@ -96,13 +98,13 @@ export default function CartPage() {
                               {item.product.name}
                             </h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              {formatPrice(item.product.price)} c/u
+                              {formatPrice(getCartItemPrice(item))} c/u{item.selectedColor ? ` · ${item.selectedColor === "marron" ? "Marrón" : "Negro"}` : ""}
                             </p>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeFromCart(item.product.id)}
+                            onClick={() => removeFromCart(item.product.id, item.selectedColor)}
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -118,7 +120,7 @@ export default function CartPage() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() =>
-                                updateQuantity(item.product.id, item.quantity - 1)
+                                updateQuantity(item.product.id, item.quantity - 1, item.selectedColor)
                               }
                             >
                               <Minus className="h-3 w-3" />
@@ -132,7 +134,7 @@ export default function CartPage() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() =>
-                                updateQuantity(item.product.id, item.quantity + 1)
+                                updateQuantity(item.product.id, item.quantity + 1, item.selectedColor)
                               }
                               disabled={item.quantity >= maxStock}
                             >
@@ -143,7 +145,7 @@ export default function CartPage() {
 
                           {/* Line Total */}
                           <p className="font-semibold text-foreground">
-                            {formatPrice(item.product.price * item.quantity)}
+                            {formatPrice(getCartItemPrice(item) * item.quantity)}
                           </p>
                         </div>
 
@@ -182,7 +184,12 @@ export default function CartPage() {
                 <div ref={recommendationsRef} className="flex min-w-0 max-w-full snap-x gap-3 overflow-x-auto pb-3 [scrollbar-width:thin]">
                   {recommendedProducts.map((product) => (
                     <div key={product.id} className="w-[min(68vw,220px)] shrink-0 snap-start sm:w-[220px]">
-                      <ProductCard product={product} compact />
+                      <ProductCard
+                        product={product}
+                        compact
+                        priceOverride={product.id === PICO_DE_ORO_ID && hasMate ? getRecommendedPrice(product, items) : undefined}
+                        promoLabel={product.id === PICO_DE_ORO_ID && hasMate ? "Oferta con tu mate" : undefined}
+                      />
                     </div>
                   ))}
                 </div>

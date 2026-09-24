@@ -24,6 +24,7 @@ function mapProductRowToDomain(row: {
     stock: row.stock,
     featured: row.featured,
     active: row.active ?? true,
+    colors: row.category === "mates" ? ["marron", "negro"] : undefined,
   }
 }
 

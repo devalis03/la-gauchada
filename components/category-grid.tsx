@@ -9,6 +9,8 @@ const categoryImages: Record<string, string> = {
   "yerberos": "/images/yerbera-cuero.jpg",
   "termos": "/images/termo-stanley.jpg",
   "bombillas": "/images/bombilla-alpaca.jpg",
+  "cuchillos-tablas": "/images/otros.jpg",
+  "boinas-ponchos": "/images/poncho.jpg",
   "otros": "/images/cepillo-bombilla.jpg",
 }
 
