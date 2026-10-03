@@ -3,13 +3,8 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ProductCard } from "@/components/product-card"
-import { useCart } from "@/lib/cart-context"
 
 export function FeaturedProducts() {
-  const { products } = useCart()
-  const featuredProducts = products.filter((p) => p.featured).slice(0, 4)
-
   return (
     <section className="bg-secondary/30 py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -22,19 +17,14 @@ export function FeaturedProducts() {
               Nuestros artículos más populares, seleccionados para ti
             </p>
           </div>
-          <Link href="/products">
+          <Link href="/products?category=featured">
             <Button variant="outline" className="gap-2">
-              Ver Todo
+              Ver Destacados
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
       </div>
     </section>
   )
