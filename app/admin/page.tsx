@@ -917,7 +917,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {[...orders].reverse().map((order) => (
+                  {orders.map((order) => (
                     <Card key={order.id}>
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between">
