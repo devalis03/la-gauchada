@@ -2,9 +2,9 @@
 "use client"
 import { formatPrice } from "@/lib/utils"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
-import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut, Plus, Pencil, Power } from "lucide-react"
+import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut, Plus, Pencil, Power, Search, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -63,6 +63,11 @@ const categoryPrefixes: Record<Product["category"], string> = {
   const [savedProducts, setSavedProducts] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<"stock" | "products" | "orders">("stock")
   const [adminProducts, setAdminProducts] = useState<Product[]>([])
+  const [productSearch, setProductSearch] = useState("")
+  const [productCategoryFilter, setProductCategoryFilter] = useState<Product["category"] | "all">("all")
+  const [expandedProductCategories, setExpandedProductCategories] = useState<Set<string>>(
+    new Set(CATEGORIES.map((category) => category.id))
+  )
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
@@ -104,6 +109,30 @@ const categoryPrefixes: Record<Product["category"], string> = {
     if (!response.ok) return
     const payload = await response.json() as { data?: Product[] }
     if (payload.data) setAdminProducts(payload.data)
+  }
+
+  const filteredAdminProducts = useMemo(() => {
+    const normalizedSearch = productSearch.trim().toLowerCase()
+
+    return adminProducts.filter((product) => {
+      const matchesCategory = productCategoryFilter === "all" || product.category === productCategoryFilter
+      const matchesSearch = !normalizedSearch || [product.id, product.name, product.description]
+        .some((value) => value.toLowerCase().includes(normalizedSearch))
+
+      return matchesCategory && matchesSearch
+    })
+  }, [adminProducts, productCategoryFilter, productSearch])
+
+  const toggleProductCategory = (categoryId: string) => {
+    setExpandedProductCategories((previous) => {
+      const next = new Set(previous)
+      if (next.has(categoryId)) {
+        next.delete(categoryId)
+      } else {
+        next.add(categoryId)
+      }
+      return next
+    })
   }
 
   const openNewProductForm = () => {
@@ -477,17 +506,68 @@ const categoryPrefixes: Record<Product["category"], string> = {
               </Card>
             )}
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              {adminProducts.map((product) => (
-                <Card key={product.id} className={product.active === false ? "opacity-60" : undefined}>
-                  <CardContent className="flex items-center gap-4 p-4">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted"><Image src={product.image} alt={product.name} fill className="object-cover" sizes="64px" /></div>
-                    <div className="min-w-0 flex-1"><h3 className="truncate font-medium">{product.name}</h3><p className="text-sm text-muted-foreground">{product.id} · {formatPrice(product.price)} · Stock: {product.stock}</p><p className="text-xs text-muted-foreground">{product.active === false ? "Inactivo" : "Activo"}</p></div>
-                    <div className="flex gap-2"><Button size="icon" variant="outline" title="Editar producto" onClick={() => openEditProductForm(product)}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="outline" title="Activar o desactivar producto" onClick={() => void handleToggleProduct(product)}><Power className="h-4 w-4" /></Button></div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_240px]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={productSearch}
+                  onChange={(event) => setProductSearch(event.target.value)}
+                  placeholder="Buscar por nombre, ID o descripción"
+                  className="pl-9"
+                  aria-label="Buscar productos"
+                />
+              </div>
+              <select
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                value={productCategoryFilter}
+                onChange={(event) => setProductCategoryFilter(event.target.value as Product["category"] | "all")}
+                aria-label="Filtrar productos por categoría"
+              >
+                <option value="all">Todas las categorías</option>
+                {CATEGORIES.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
             </div>
+
+            {filteredAdminProducts.length > 0 ? (
+              <div className="space-y-4">
+                {CATEGORIES.map((category) => {
+                  const categoryProducts = filteredAdminProducts.filter((product) => product.category === category.id)
+                  if (categoryProducts.length === 0) return null
+
+                  const isExpanded = expandedProductCategories.has(category.id)
+                  return (
+                    <section key={category.id} className="overflow-hidden rounded-lg border border-border bg-background">
+                      <button
+                        type="button"
+                        onClick={() => toggleProductCategory(category.id)}
+                        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-secondary/50"
+                        aria-expanded={isExpanded}
+                      >
+                        <span className="font-semibold text-foreground">{category.name} <span className="font-normal text-muted-foreground">({categoryProducts.length})</span></span>
+                        {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                      {isExpanded && (
+                        <div className="grid gap-4 border-t border-border p-4 lg:grid-cols-2">
+                          {categoryProducts.map((product) => (
+                            <Card key={product.id} className={product.active === false ? "opacity-60" : undefined}>
+                              <CardContent className="flex items-center gap-4 p-4">
+                                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted"><Image src={product.image} alt={product.name} fill className="object-cover" sizes="64px" /></div>
+                                <div className="min-w-0 flex-1"><h3 className="truncate font-medium">{product.name}</h3><p className="text-sm text-muted-foreground">{product.id} · {formatPrice(product.price)} · Stock: {product.stock}</p><p className="text-xs text-muted-foreground">{product.active === false ? "Inactivo" : "Activo"}</p></div>
+                                <div className="flex gap-2"><Button size="icon" variant="outline" title="Editar producto" onClick={() => openEditProductForm(product)}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="outline" title="Activar o desactivar producto" onClick={() => void handleToggleProduct(product)}><Power className="h-4 w-4" /></Button></div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border py-12 text-center">
+                <p className="text-sm text-muted-foreground">No se encontraron productos con esos filtros.</p>
+              </div>
+            )}
           </div>
         )}
 

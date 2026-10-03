@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense } from "react"
-import { useState, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Filter, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,12 @@ function ProductsContent() {
   const [expandedCategory, setExpandedCategory] = useState<Category | null>(initialCategory === "mates" ? "mates" : null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const { products } = useCart()
+
+  useEffect(() => {
+    setSelectedCategory(initialCategory)
+    setSelectedSubcategory(initialSubcategory)
+    setExpandedCategory(initialCategory === "mates" ? "mates" : null)
+  }, [initialCategory, initialSubcategory])
 
   const filteredProducts = useMemo(() => {
     let filtered = products

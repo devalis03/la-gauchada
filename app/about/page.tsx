@@ -26,8 +26,8 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="relative h-100 md:h-125">
         <Image
-          src="/images/about-story.jpg"
-          alt="Plantación de yerba mate"
+          src="/images/about-us.jpg"
+          alt="La Gauchada y sus productos con identidad argentina"
           fill
           className="object-cover"
           priority
@@ -51,16 +51,16 @@ export default function AboutPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="prose prose-lg mx-auto text-muted-foreground">
             <p className="text-lg leading-relaxed text-center">
-              Somos dos amigos con una idea simple: compartir lo que sentimos cada vez que tomamos un mate.
+              Somos dos amigos con una idea simple: compartir eso que sentimos cada vez que tomamos un mate.
             </p>
             <p className="mt-6 leading-relaxed text-center">
-              Creemos que cada mate tiene su historia: un poco de casa, de familia, de amigos y de nuestras raíces. Esa tradición Argentina que queremos cuidar y mantener viva.
+              Creemos que cada mate tiene algo de casa, de familia, de amigos y de nuestras raíces. Esa tradición argentina que queremos cuidar y mantener viva.
             </p>
             <p className="mt-6 leading-relaxed text-center">
-              No buscamos solo vender productos, sino ofrecer momentos. Experiencias de nuestra cultura que se disfrutan con el corazón.
+              La Gauchada nace de ahí: del amor por lo nuestro y de las ganas de acercarte productos que te conecten con lo que realmente importa.
             </p>
             <p className="mt-6 leading-relaxed text-center">
-              <span className="font-semibold text-foreground">La Gauchada Mates</span> nace desde ahí: del amor por lo simple y de las ganas de que cada mate que llegue te conecte con lo que realmente importa.
+              No buscamos solamente vender mates, sino compartir una forma de vivir nuestras costumbres y mantenerlas presentes.
             </p>
           </div>
         </div>
