@@ -758,7 +758,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
                         )
                       })}
                     </div>}
-                  </CardContent>
+                  </CardContent>}
                 </Card>
               )
             })}
