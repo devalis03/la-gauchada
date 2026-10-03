@@ -68,6 +68,9 @@ const categoryPrefixes: Record<Product["category"], string> = {
   const [expandedProductCategories, setExpandedProductCategories] = useState<Set<string>>(
     new Set(CATEGORIES.map((category) => category.id))
   )
+  const [expandedStockCategories, setExpandedStockCategories] = useState<Set<string>>(
+    new Set(CATEGORIES.map((category) => category.id))
+  )
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
@@ -99,8 +102,12 @@ const categoryPrefixes: Record<Product["category"], string> = {
       getOrderStats(),
     ])
 
-    setOrders(allOrders)
-    setPendingTransferences(pending)
+    setOrders([...allOrders].sort((first, second) => (
+      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime()
+    )))
+    setPendingTransferences([...pending].sort((first, second) => (
+      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime()
+    )))
     setStats(orderStats)
   }
 
@@ -125,6 +132,18 @@ const categoryPrefixes: Record<Product["category"], string> = {
 
   const toggleProductCategory = (categoryId: string) => {
     setExpandedProductCategories((previous) => {
+      const next = new Set(previous)
+      if (next.has(categoryId)) {
+        next.delete(categoryId)
+      } else {
+        next.add(categoryId)
+      }
+      return next
+    })
+  }
+
+  const toggleStockCategory = (categoryId: string) => {
+    setExpandedStockCategories((previous) => {
       const next = new Set(previous)
       if (next.has(categoryId)) {
         next.delete(categoryId)
@@ -638,13 +657,24 @@ const categoryPrefixes: Record<Product["category"], string> = {
             {/* Product List by Category */}
             {CATEGORIES.map((category) => {
               const categoryProducts = products.filter((p) => p.category === category.id)
+              const isExpanded = expandedStockCategories.has(category.id)
               return (
-                <Card key={category.id} className="mb-6">
-                  <CardHeader>
-                    <CardTitle>{category.name}</CardTitle>
-                    <CardDescription>{category.description}</CardDescription>
+                <Card key={category.id} className="mb-6 overflow-hidden">
+                  <CardHeader className="p-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleStockCategory(category.id)}
+                      className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-secondary/50"
+                      aria-expanded={isExpanded}
+                    >
+                      <span>
+                        <CardTitle>{category.name}</CardTitle>
+                        <CardDescription>{category.description}</CardDescription>
+                      </span>
+                      {isExpanded ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                    </button>
                   </CardHeader>
-                  <CardContent>
+                  {isExpanded && <CardContent>
                     {categoryProducts.length === 0 ? (
                       <p className="text-sm text-muted-foreground">No hay productos cargados en esta categoría.</p>
                     ) : <div className="space-y-4">
