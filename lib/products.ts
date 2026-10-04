@@ -12,21 +12,21 @@ export const initialProducts: Product[] = [
   { id: "promo-008", name: "RANCHERO + BOMBILLA + TERMO", description: "Kit promocional con mate ranchero, bombilla y termo.", price: 68500, image: "/images/kit-matero.jpg", category: "promos", stock: 10 },
 
   // MATES IMPERIALES
-  { id: "mate-006", name: "IMPERIAL", description: "Virola de Alpaca Cincelada y Lisa", price: 38000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-imperiales", stock: 10 },
-  { id: "mate-002", name: "IMPERIAL CUERO CRUDO", description: "Virola de Alpaca", price: 0, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-imperiales", stock: 0 },
-  { id: "mate-008", name: "IMPERIAL ALGARROBO", description: "Premium Virola de Alpaca", price: 40000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-imperiales", stock: 10 },
-  { id: "mate-011", name: "IMPERIAL ALGARROBO", description: "Virola de Acero Inoxidable", price: 14000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-imperiales", stock: 10 },
+  { id: "mate-006", name: "IMPERIAL", description: "Virola de Alpaca Cincelada y Lisa", price: 38000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "tradicionales", stock: 10 },
+  { id: "mate-002", name: "IMPERIAL CUERO CRUDO", description: "Virola de Alpaca", price: 0, image: "/images/mate-madera.jpg", category: "mates", subcategory: "cuero-crudo", stock: 0 },
+  { id: "mate-008", name: "IMPERIAL ALGARROBO", description: "Premium Virola de Alpaca", price: 40000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "algarrobo", stock: 10 },
+  { id: "mate-011", name: "IMPERIAL ALGARROBO", description: "Virola de Acero Inoxidable", price: 14000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "algarrobo", stock: 10 },
 
   // MATES TRADICIONALES
-  { id: "mate-001", name: "SOL DE MAYO", description: "Mate de Algarrobo Chapeado con el Sol", price: 40000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-tradicionales", stock: 10 },
-  { id: "mate-004", name: "RANCHERO", description: "Madera Maciza de Algarrobo", price: 42500, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-tradicionales", stock: 10 },
-  { id: "mate-005", name: "CAMIONERO", description: "Virola de Acero", price: 27000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-tradicionales", stock: 10 },
-  { id: "mate-009", name: "CRIOLLO", description: "Mate Calabaza con Base de Cuero Coquito/SP", price: 16000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-tradicionales", stock: 10 },
-  { id: "mate-010", name: "CAMIONERO ALGARROBO", description: "Virola de Acero Inoxidable", price: 14000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-tradicionales", stock: 10 },
+  { id: "mate-001", name: "SOL DE MAYO", description: "Mate de Algarrobo Chapeado con el Sol", price: 40000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "algarrobo", stock: 10 },
+  { id: "mate-004", name: "RANCHERO", description: "Madera Maciza de Algarrobo", price: 42500, image: "/images/mate-madera.jpg", category: "mates", subcategory: "algarrobo", stock: 10 },
+  { id: "mate-005", name: "CAMIONERO", description: "Virola de Acero", price: 27000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "tradicionales", stock: 10 },
+  { id: "mate-009", name: "CRIOLLO", description: "Mate Calabaza con Base de Cuero Coquito/SP", price: 16000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "criollos", stock: 10 },
+  { id: "mate-010", name: "CAMIONERO ALGARROBO", description: "Virola de Acero Inoxidable", price: 14000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "algarrobo", stock: 10 },
 
   // MATES TORPEDOS
-  { id: "mate-007", name: "TORPEDO", description: "Virola de Acero", price: 27000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-torpedos", stock: 10 },
-  { id: "mate-003", name: "TORPEDO CUERO CRUDO", description: "Virola de Alpaca", price: 40000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "mates-torpedos", stock: 10 },
+  { id: "mate-007", name: "TORPEDO", description: "Virola de Acero", price: 27000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "tradicionales", stock: 10 },
+  { id: "mate-003", name: "TORPEDO CUERO CRUDO", description: "Virola de Alpaca", price: 40000, image: "/images/mate-madera.jpg", category: "mates", subcategory: "cuero-crudo", stock: 10 },
 
   // MATERAS
   { id: "matera-001", name: "MORRAL MARRON", description: "Bandolera Matera de Cuero", price: 85000, image: "/images/bolsa-matera.jpg", category: "materas", stock: 10 },
@@ -41,12 +41,12 @@ export const initialProducts: Product[] = [
   { id: "yerbero-004", name: "GAMUZADO CON BASE", description: "Yerbero de Cuero con Capacidad de 500g", price: 13000, image: "/images/yerbera-cuero.jpg", category: "yerberos", stock: 10 },
 
   // SOMBREROS
-  { id: "sombrero-001", name: "SOMBRERO NORTEÑO", description: "Ala 10\"", price: 65000, image: "/images/sombrero.jpg", category: "otros", stock: 10 },
-  { id: "sombrero-002", name: "SOMBRERO AUSTRALIANO", description: "Cuero Engrasado", price: 65000, image: "/images/sombrero.jpg", category: "otros", stock: 10 },
+  { id: "sombrero-001", name: "SOMBRERO NORTEÑO", description: "Ala 10\"", price: 65000, image: "/images/sombrero.jpg", category: "sombreros-boinas", stock: 10 },
+  { id: "sombrero-002", name: "SOMBRERO AUSTRALIANO", description: "Cuero Engrasado", price: 65000, image: "/images/sombrero.jpg", category: "sombreros-boinas", stock: 10 },
 
   // PONCHOS
-  { id: "poncho-001", name: "PONCHO PESADO", description: "Guarda Lisa", price: 79000, image: "/images/poncho.jpg", category: "otros", stock: 10 },
-  { id: "poncho-002", name: "PONCHO PESADO", description: "Guarda Incaica", price: 79000, image: "/images/poncho.jpg", category: "otros", stock: 10 },
+  { id: "poncho-001", name: "PONCHO PESADO", description: "Guarda Lisa", price: 79000, image: "/images/poncho.jpg", category: "ponchos", stock: 10 },
+  { id: "poncho-002", name: "PONCHO PESADO", description: "Guarda Incaica", price: 79000, image: "/images/poncho.jpg", category: "ponchos", stock: 10 },
 
   // BOINAS
   { id: "boina-001", name: "TOLOSA DE HILO", description: "Tolosa Tupida. Colores: Beige, Bordo, Gris", price: 35000, image: "/images/boina.jpg", category: "otros", stock: 10 },

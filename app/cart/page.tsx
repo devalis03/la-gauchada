@@ -7,6 +7,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ChevronLeft, ChevronRight
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCart } from "@/lib/cart-context"
+import { formatProductColor } from "@/lib/types"
 import { formatPrice } from "@/lib/utils"
 import { ProductCard } from "@/components/product-card"
 import { getCartItemPrice, getRecommendedPrice, hasMateInCart, PICO_DE_ORO_ID } from "@/lib/cart-pricing"
@@ -98,7 +99,7 @@ export default function CartPage() {
                               {item.product.name}
                             </h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              {formatPrice(getCartItemPrice(item))} c/u{item.selectedColor ? ` · ${item.selectedColor === "marron" ? "Marrón" : "Negro"}` : ""}
+                              {formatPrice(getCartItemPrice(item))} c/u{item.selectedColor ? ` · ${formatProductColor(item.selectedColor)}` : ""}
                             </p>
                           </div>
                           <Button

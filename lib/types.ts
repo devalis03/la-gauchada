@@ -12,11 +12,16 @@ export interface Product {
   colors?: ProductColor[]
 }
 
-export type Category = "promos" | "mates" | "materas" | "yerberos" | "termos" | "bombillas" | "cuchillos-tablas" | "boinas-ponchos" | "otros"
+export type Category = "promos" | "mates" | "materas" | "yerberos" | "cuchillos-tablas" | "ponchos" | "sombreros-boinas" | "termos" | "bombillas" | "otros"
 
-export type ProductColor = "marron" | "negro"
+export type ProductColor = string
+export function formatProductColor(color: ProductColor) {
+  if (color === "marron") return "Marrón"
+  if (color === "negro") return "Negro"
+  return color
+}
 
-export type SubcategoryId = "mates-imperiales" | "mates-tradicionales" | "mates-torpedos"
+export type SubcategoryId = "cuero-crudo" | "tradicionales" | "algarrobo" | "criollos"
 
 export interface Subcategory {
   id: SubcategoryId
@@ -88,15 +93,17 @@ export const CATEGORIES: { id: Category; name: string; description: string }[] =
   { id: "mates", name: "Mates", description: "Todos los mates" },
   { id: "materas", name: "Materas", description: "Bolsas para llevar" },
   { id: "yerberos", name: "Yerberos", description: "Contenedores de yerba" },
+  { id: "cuchillos-tablas", name: "Cuchillos y Tablas", description: "Cuchillos y tablas para compartir" },
+  { id: "ponchos", name: "Ponchos", description: "Ponchos tradicionales" },
+  { id: "sombreros-boinas", name: "Sombreros y Boinas", description: "Sombreros y boinas tradicionales" },
   { id: "termos", name: "Termos", description: "Termos para agua caliente" },
   { id: "bombillas", name: "Bombillas", description: "Bombillas" },
-  { id: "cuchillos-tablas", name: "Cuchillos y Tablas", description: "Cuchillos y tablas para compartir" },
-  { id: "boinas-ponchos", name: "Boinas y Ponchos", description: "Indumentaria tradicional" },
   { id: "otros", name: "Otros", description: "Otros accesorios" },
 ]
 
 export const SUBCATEGORIES: Subcategory[] = [
-  { id: "mates-imperiales", name: "Mates Imperiales", category: "mates" },
-  { id: "mates-tradicionales", name: "Mates Tradicionales", category: "mates" },
-  { id: "mates-torpedos", name: "Mates Torpedos", category: "mates" },
+  { id: "cuero-crudo", name: "Cuero Crudo", category: "mates" },
+  { id: "tradicionales", name: "Tradicionales", category: "mates" },
+  { id: "algarrobo", name: "Algarrobo", category: "mates" },
+  { id: "criollos", name: "Criollos", category: "mates" },
 ]

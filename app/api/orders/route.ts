@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     const trustedItems = (items as Order["items"]).map((item) => ({
       ...item,
-      selectedColor: item.product.category === "mates" && (item.selectedColor === "marron" || item.selectedColor === "negro")
+      selectedColor: item.product.colors?.includes(item.selectedColor ?? "")
         ? item.selectedColor
         : undefined,
     }))

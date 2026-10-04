@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { updateProduct } from "@/lib/repositories/products-repo"
-import type { Product } from "@/lib/types"
+import { CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/types"
 
 export async function PATCH(
   request: Request,
@@ -35,12 +35,13 @@ function validateProductInput(body: Partial<Product>) {
     typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0 ||
     typeof body.image !== "string" || !body.image.trim() ||
     typeof body.category !== "string" ||
-    !["promos", "mates", "materas", "yerberos", "termos", "bombillas", "cuchillos-tablas", "boinas-ponchos", "otros"].includes(body.category) ||
+    !CATEGORIES.some((category) => category.id === body.category) ||
     (body.category === "mates" && !body.subcategory) ||
     (body.category !== "mates" && body.subcategory !== undefined && body.subcategory !== null) ||
     (body.subcategory !== undefined && body.subcategory !== null &&
-      !["mates-imperiales", "mates-tradicionales", "mates-torpedos"].includes(body.subcategory)) ||
-    typeof body.stock !== "number" || !Number.isInteger(body.stock) || body.stock < 0
+      !SUBCATEGORIES.some((subcategory) => subcategory.id === body.subcategory)) ||
+    typeof body.stock !== "number" || !Number.isInteger(body.stock) || body.stock < 0 ||
+    (body.colors !== undefined && (!Array.isArray(body.colors) || body.colors.some((color) => typeof color !== "string")))
   ) {
     return null
   }
@@ -55,5 +56,6 @@ function validateProductInput(body: Partial<Product>) {
     stock: body.category === "promos" ? 0 : body.stock,
     featured: body.featured === true,
     active: body.active !== false,
+    colors: body.colors?.map((color) => color.trim()).filter(Boolean) ?? [],
   }
 }
