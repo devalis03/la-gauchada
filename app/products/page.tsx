@@ -29,6 +29,10 @@ function ProductsContent() {
     setExpandedCategory(initialCategory === "mates" ? "mates" : null)
   }, [initialCategory, initialSubcategory])
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [selectedCategory, selectedSubcategory])
+
   const filteredProducts = useMemo(() => {
     let filtered = products
     

@@ -43,7 +43,7 @@ export function ProductCard({ product, compact = false, priceOverride, promoLabe
   const displayPrice = priceOverride ?? product.price
 
   return (
-    <Card className={`group h-full overflow-hidden transition-shadow hover:shadow-lg ${compact ? "flex flex-col" : ""}`}>
+    <Card className={`group h-full overflow-hidden border-0 py-0 transition-shadow hover:shadow-lg ${compact ? "flex flex-col" : ""}`}>
       <div className={`relative overflow-hidden bg-muted ${compact ? "aspect-[4/3]" : "aspect-square"}`}>
         <Image
           src={product.image}

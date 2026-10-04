@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 function validateProductInput(body: Partial<Product>) {
   if (
     typeof body.name !== "string" || !body.name.trim() ||
-    typeof body.description !== "string" || !body.description.trim() ||
+    typeof body.description !== "string" ||
     typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0 ||
     typeof body.image !== "string" || !body.image.trim() ||
     typeof body.category !== "string" ||

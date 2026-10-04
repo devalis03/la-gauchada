@@ -76,7 +76,7 @@ export default function CartPage() {
               const isOverStock = item.quantity > maxStock
 
               return (
-                <Card key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.priceOverride ?? "regular"}`} className={isOverStock ? "border-destructive" : ""}>
+                <Card key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.priceOverride ?? "regular"}`} className={isOverStock ? "border-destructive py-0" : "border-0 py-0"}>
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       {/* Image */}
