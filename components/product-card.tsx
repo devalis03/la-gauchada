@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ShoppingCart, Check, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -16,18 +16,36 @@ interface ProductCardProps {
   promoLabel?: string
 }
 
+function getColorClass(color: string) {
+  const normalizedColor = color.toLowerCase()
+  if (normalizedColor.includes("marron") || normalizedColor.includes("marrón")) return "bg-[#6b4428]"
+  if (normalizedColor.includes("negro")) return "bg-black"
+  if (normalizedColor.includes("rojo")) return "bg-red-600"
+  if (normalizedColor.includes("verde")) return "bg-green-600"
+  if (normalizedColor.includes("azul")) return "bg-blue-600"
+  if (normalizedColor.includes("blanco")) return "bg-white"
+  return "bg-muted"
+}
+
 export function ProductCard({ product, compact = false, priceOverride, promoLabel }: ProductCardProps) {
   const { addToCart, products } = useCart()
   const [isAdded, setIsAdded] = useState(false)
   const [error, setError] = useState(false)
-  const [selectedColor, setSelectedColor] = useState<ProductColor>("marron")
+  const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors?.[0])
+  const availableColors = useMemo(() => product.colors ?? [], [product.colors])
+
+  useEffect(() => {
+    if (!selectedColor || !availableColors.includes(selectedColor)) {
+      setSelectedColor(availableColors[0])
+    }
+  }, [availableColors, selectedColor])
 
   // Get current stock from context
   const currentProduct = products.find(p => p.id === product.id)
   const stock = currentProduct?.stock ?? product.stock
 
   const handleAddToCart = () => {
-    const success = addToCart(product, 1, product.category === "mates" ? selectedColor : undefined, priceOverride)
+    const success = addToCart(product, 1, selectedColor, priceOverride)
     if (success) {
       setIsAdded(true)
       setError(false)
@@ -74,18 +92,20 @@ export function ProductCard({ product, compact = false, priceOverride, promoLabe
               <span className="text-lg font-semibold text-foreground">{formatPrice(displayPrice)}</span>
               {priceOverride !== undefined && <span className="text-xs text-muted-foreground line-through">{formatPrice(product.price)}</span>}
             </div>
-            {product.category === "mates" && (
-              <div className="mt-2 flex items-center gap-2" aria-label="Color del mate">
-                {(["marron", "negro"] as const).map((color) => (
+            {availableColors.length > 0 && (
+              <div className="mt-2 flex items-center gap-2" aria-label="Color del producto">
+                {availableColors.map((color) => (
                   <button
                     key={color}
                     type="button"
                     aria-label={`Color ${color}`}
                     aria-pressed={selectedColor === color}
-                    title={color === "marron" ? "Marrón" : "Negro"}
+                    title={color}
                     onClick={() => setSelectedColor(color)}
-                    className={`h-6 w-6 rounded-sm border-2 ${color === "marron" ? "bg-[#6b4428]" : "bg-black"} ${selectedColor === color ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
-                  />
+                    className={`h-6 w-6 rounded-sm border-2 ${getColorClass(color)} ${selectedColor === color ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+                  >
+                    <span className="sr-only">{color}</span>
+                  </button>
                 ))}
               </div>
             )}

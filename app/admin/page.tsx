@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
-import { CATEGORIES } from "@/lib/types"
+import { CATEGORIES, SUBCATEGORIES, type ProductColor } from "@/lib/types"
 import { initialProducts } from "@/lib/products"
 import { 
   getAllOrders, 
@@ -52,7 +52,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
   termos: "termo",
   bombillas: "bombilla",
   "cuchillos-tablas": "cuchillo",
-  "boinas-ponchos": "boina",
+  ponchos: "poncho",
+  "sombreros-boinas": "sombrero",
   otros: "otro",
 }
 
@@ -72,6 +73,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
     new Set(CATEGORIES.map((category) => category.id))
   )
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
+  const [hasColorOptions, setHasColorOptions] = useState(false)
+  const [colorInput, setColorInput] = useState("")
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
   const [bundleComponents, setBundleComponents] = useState<BundleComponent[]>([])
@@ -164,6 +167,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
   const openNewProductForm = () => {
     setEditingProductId(null)
     setProductForm(emptyProductForm)
+    setHasColorOptions(false)
+    setColorInput("")
     setSelectedImageFile(null)
     setImagePreview(emptyProductForm.image)
     setBundleComponents([])
@@ -174,6 +179,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
   const openEditProductForm = async (product: Product) => {
     setEditingProductId(product.id)
     setProductForm({ ...product, subcategory: product.subcategory ?? null, active: product.active !== false, featured: product.featured === true })
+    setHasColorOptions((product.colors?.length ?? 0) > 0)
+    setColorInput(product.colors?.join(", ") ?? "")
     setSelectedImageFile(null)
     setImagePreview(product.image)
     setBundleComponents([])
@@ -188,7 +195,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
     }
   }
 
-  const handleProductFormChange = (field: keyof ProductForm, value: string | number | boolean | null) => {
+  const handleProductFormChange = (field: keyof ProductForm, value: string | number | boolean | null | ProductColor[] | undefined) => {
     setProductForm((previous) => ({
       ...previous,
       [field]: value,
@@ -214,6 +221,12 @@ const categoryPrefixes: Record<Product["category"], string> = {
   const handleProductSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setProductError(null)
+
+    const normalizedColors = hasColorOptions ? colorInput.split(",").map((color) => color.trim()).filter(Boolean) : []
+    if (hasColorOptions && normalizedColors.length === 0) {
+      setProductError("Indicá al menos un color o desmarcá la opción de colores")
+      return
+    }
 
     if (productForm.category === "promos" && (
       bundleComponents.length === 0 ||
@@ -245,7 +258,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
     const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/products", {
       method: editingProductId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...productForm, image }),
+      body: JSON.stringify({ ...productForm, image, colors: normalizedColors }),
     })
     const payload = await response.json() as { data?: Product; error?: string }
     if (!response.ok || !payload.data) {
@@ -516,11 +529,30 @@ const categoryPrefixes: Record<Product["category"], string> = {
                     {productForm.category === "mates" && (
                       <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.subcategory ?? ""} onChange={(event) => handleProductFormChange("subcategory", event.target.value || null)} required>
                         <option value="" disabled>Seleccionar subcategoría</option>
-                        <option value="mates-imperiales">Mates Imperiales</option>
-                        <option value="mates-tradicionales">Mates Tradicionales</option>
-                        <option value="mates-torpedos">Mates Torpedos</option>
+                        {SUBCATEGORIES.map((subcategory) => <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>)}
                       </select>
                     )}
+                    <div className="md:col-span-2 space-y-2 rounded-md border p-4">
+                      <label className="flex items-center gap-2 text-sm font-medium">
+                        <input
+                          type="checkbox"
+                          checked={hasColorOptions}
+                          onChange={(event) => {
+                            setHasColorOptions(event.target.checked)
+                            if (!event.target.checked) setColorInput("")
+                          }}
+                        />
+                        Este producto tiene opciones de colores
+                      </label>
+                      {hasColorOptions && (
+                        <Input
+                          placeholder="Ej.: Marrón, Negro, Rojo"
+                          value={colorInput}
+                          onChange={(event) => setColorInput(event.target.value)}
+                        />
+                      )}
+                      <p className="text-xs text-muted-foreground">Separá los colores con comas. Si no se marca, el catálogo no mostrará opciones.</p>
+                    </div>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={productForm.featured} onChange={(event) => handleProductFormChange("featured", event.target.checked)} /> Destacado</label>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={productForm.active} onChange={(event) => handleProductFormChange("active", event.target.checked)} /> Activo</label>
                     {productError && <p className="md:col-span-2 text-sm text-destructive">{productError}</p>}

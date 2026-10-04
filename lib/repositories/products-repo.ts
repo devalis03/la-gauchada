@@ -12,6 +12,7 @@ function mapProductRowToDomain(row: {
   stock: number
   featured: boolean
   active?: boolean
+  colors?: string[] | null
 }): Product {
   return {
     id: row.id,
@@ -24,11 +25,11 @@ function mapProductRowToDomain(row: {
     stock: row.stock,
     featured: row.featured,
     active: row.active ?? true,
-    colors: row.category === "mates" ? ["marron", "negro"] : undefined,
+    colors: row.colors ?? undefined,
   }
 }
 
-const productSelect = "id, name, description, price, image, category, subcategory, stock, featured, active"
+const productSelect = "id, name, description, price, image, category, subcategory, stock, featured, active, colors"
 
 export async function listProducts(includeInactive = false): Promise<Product[]> {
   const supabase = getSupabaseAdminClient()
@@ -102,6 +103,7 @@ export type ProductInput = {
   stock: number
   featured: boolean
   active: boolean
+  colors?: string[]
 }
 
 export async function createProduct(input: ProductInput): Promise<Product> {

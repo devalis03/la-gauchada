@@ -7,10 +7,11 @@ const categoryImages: Record<string, string> = {
   "mates": "/images/calabaza-natural.jpg",
   "materas": "/images/bolsa-matera.jpg",
   "yerberos": "/images/yerbera-cuero.jpg",
+  "cuchillos-tablas": "/images/otros.jpg",
+  "ponchos": "/images/poncho.jpg",
+  "sombreros-boinas": "/images/sombrero.jpg",
   "termos": "/images/termo-stanley.jpg",
   "bombillas": "/images/bombilla-alpaca.jpg",
-  "cuchillos-tablas": "/images/otros.jpg",
-  "boinas-ponchos": "/images/poncho.jpg",
   "otros": "/images/cepillo-bombilla.jpg",
 }
 

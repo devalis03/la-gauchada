@@ -1,3 +1,4 @@
+import { formatProductColor } from "./types"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import { Resend } from "resend"
 import type { Order } from "@/lib/types"
@@ -72,7 +73,7 @@ function getOrderItemsHtml(order: Order) {
     .map(
       (item) => `
         <tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product.name)}${item.selectedColor ? ` (${item.selectedColor === "marron" ? "Marrón" : "Negro"})` : ""}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product.name)}${item.selectedColor ? ` (${escapeHtml(formatProductColor(item.selectedColor))})` : ""}</td>
           <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
           <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(getCartItemPrice(item) * item.quantity)}</td>
         </tr>`,
@@ -178,7 +179,7 @@ async function createInvoiceAttachment(order: Order): Promise<EmailAttachment> {
   y -= 20
 
   for (const item of order.items) {
-    const productLabel = `${item.product.name}${item.selectedColor ? ` (${item.selectedColor === "marron" ? "Marrón" : "Negro"})` : ""}`
+    const productLabel = `${item.product.name}${item.selectedColor ? ` (${formatProductColor(item.selectedColor)})` : ""}`
     const productName = productLabel.length > 52 ? `${productLabel.slice(0, 49)}...` : productLabel
     page.drawText(productName, { x: 48, y, size: 9, font: regularFont, color: dark })
     page.drawText(String(item.quantity), { x: 400, y, size: 9, font: regularFont, color: dark })
