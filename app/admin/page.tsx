@@ -2,7 +2,7 @@
 "use client"
 import { formatPrice } from "@/lib/utils"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import Image from "next/image"
 import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut, Plus, Pencil, Power, Search, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -83,12 +83,19 @@ const categoryPrefixes: Record<Product["category"], string> = {
   const [stats, setStats] = useState<OrderStats | null>(null)
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null)
+  const productFormRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     return () => {
       if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview)
     }
   }, [imagePreview])
+
+  useEffect(() => {
+    if (isProductFormOpen) {
+      productFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }, [isProductFormOpen])
 
   const handleLogout = async () => {
     await fetch("/api/admin/logout", { method: "POST" })
@@ -454,7 +461,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
             </div>
 
             {isProductFormOpen && (
-              <Card>
+              <div ref={productFormRef}>
+                <Card>
                 <CardHeader>
                   <CardTitle>{editingProductId ? "Editar producto" : "Nuevo producto"}</CardTitle>
                   <CardDescription>Seleccioná una imagen JPG, PNG o WEBP de hasta 5 MB.</CardDescription>
@@ -463,7 +471,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
                   <form onSubmit={(event) => void handleProductSubmit(event)} className="grid gap-4 md:grid-cols-2">
                     <Input placeholder="Se asigna automáticamente" value={editingProductId ? productForm.id : getNextProductIdPreview()} disabled />
                     <Input placeholder="Nombre" value={productForm.name} onChange={(event) => handleProductFormChange("name", event.target.value)} required />
-                    <Textarea className="md:col-span-2" placeholder="Descripción" value={productForm.description} onChange={(event) => handleProductFormChange("description", event.target.value)} required />
+                    <Textarea className="md:col-span-2" placeholder="Descripción (opcional)" value={productForm.description} onChange={(event) => handleProductFormChange("description", event.target.value)} />
                     <Input type="number" min="0" step="0.01" placeholder="Precio" value={productForm.price} onChange={(event) => handleProductFormChange("price", Number(event.target.value))} required />
                     {productForm.category === "promos" ? (
                       <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm">
@@ -522,7 +530,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
                     </div>
                   </form>
                 </CardContent>
-              </Card>
+                </Card>
+              </div>
             )}
 
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_240px]">
