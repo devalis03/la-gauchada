@@ -3,22 +3,23 @@ import type { Order } from "@/lib/types"
 import { setOrderStatus } from "@/lib/repositories/orders-repo"
 import { sendOrderConfirmationEmails } from "@/lib/email-service"
 
-export async function PATCH(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest) {
   try {
-    const { id } = await context.params
-    const body = (await req.json()) as {
+    const orderId = request.nextUrl.searchParams.get("orderId")
+    const body = (await request.json()) as {
       status?: Order["status"]
       transferenceStatus?: Order["transferenceStatus"]
+    }
+
+    if (!orderId) {
+      return NextResponse.json({ error: "Missing order id" }, { status: 400 })
     }
 
     if (!body.status) {
       return NextResponse.json({ error: "Missing status" }, { status: 400 })
     }
 
-    const updated = await setOrderStatus(id, body.status, body.transferenceStatus)
+    const updated = await setOrderStatus(orderId, body.status, body.transferenceStatus)
 
     if (!updated) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })

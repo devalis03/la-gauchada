@@ -1,25 +1,25 @@
-import { Truck, Shield, Leaf, Heart } from "lucide-react"
+import { Truck, ShieldCheck, Flag, PenLine } from "lucide-react"
 
 const benefits = [
   {
-    icon: Leaf,
-    title: "100% Natural",
-    description: "Toda nuestra yerba mate proviene de granjas sostenibles sin aditivos artificiales.",
+    icon: Flag,
+    title: "Tradición Argentina",
+    description: "Productos elegidos para mantener viva nuestra forma de compartir el mate.",
   },
   {
     icon: Truck,
-    title: "Envío Rápido",
-    description: "Entrega rápida a tu puerta. Ordena hoy, disfruta tu mate pronto.",
+    title: "Envíos a todo el país",
+    description: "Preparamos cada pedido con cuidado para que La Gauchada llegue estés donde estés.",
   },
   {
-    icon: Shield,
-    title: "Calidad Garantizada",
-    description: "Respaldamos todos nuestros productos. ¿No estás satisfecho? Lo arreglamos.",
+    icon: ShieldCheck,
+    title: "Calidad Seleccionada",
+    description: "Elegimos cada producto cuidando sus materiales, terminaciones y durabilidad.",
   },
   {
-    icon: Heart,
-    title: "Negocio Familiar",
-    description: "Somos amantes del mate compartiendo nuestra cultura con el mundo.",
+    icon: PenLine,
+    title: "Personalización",
+    description: "Grabamos nombres, iniciales, fechas y diseños para hacer cada mate único.",
   },
 ]
 

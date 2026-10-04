@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       title: item.product.name,
       quantity: item.quantity,
       currency_id: "ARS",
-      unit_price: Number(item.product.price),
+      unit_price: Number(item.priceOverride ?? item.product.price),
     }))
 
     const preferenceBody: {

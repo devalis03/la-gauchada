@@ -1,22 +1,9 @@
 import type { Metadata, Viewport } from 'next'
-import { Libre_Baskerville, Source_Sans_3 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/lib/cart-context'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import './globals.css'
-
-const libreBaskerville = Libre_Baskerville({ 
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-serif"
-})
-
-const sourceSans = Source_Sans_3({ 
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans"
-})
 
 export const metadata: Metadata = {
   title: 'La Gauchada | Yerba Mate Premium y Accesorios',
@@ -42,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${sourceSans.variable} ${libreBaskerville.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <CartProvider>
           <div className="flex min-h-screen flex-col">
             <SiteHeader />

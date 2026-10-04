@@ -6,25 +6,28 @@ import { ShoppingCart, Check, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCart } from "@/lib/cart-context"
-import type { Product } from "@/lib/types"
+import type { Product, ProductColor } from "@/lib/types"
 import { formatPrice } from "@/lib/utils"
 
 interface ProductCardProps {
   product: Product
   compact?: boolean
+  priceOverride?: number
+  promoLabel?: string
 }
 
-export function ProductCard({ product, compact = false }: ProductCardProps) {
+export function ProductCard({ product, compact = false, priceOverride, promoLabel }: ProductCardProps) {
   const { addToCart, products } = useCart()
   const [isAdded, setIsAdded] = useState(false)
   const [error, setError] = useState(false)
+  const [selectedColor, setSelectedColor] = useState<ProductColor>("marron")
 
   // Get current stock from context
   const currentProduct = products.find(p => p.id === product.id)
   const stock = currentProduct?.stock ?? product.stock
 
   const handleAddToCart = () => {
-    const success = addToCart(product)
+    const success = addToCart(product, 1, product.category === "mates" ? selectedColor : undefined, priceOverride)
     if (success) {
       setIsAdded(true)
       setError(false)
@@ -37,9 +40,10 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
 
   const isOutOfStock = stock === 0
   const isLowStock = stock > 0 && stock <= 5
+  const displayPrice = priceOverride ?? product.price
 
   return (
-    <Card className={`group h-full overflow-hidden transition-shadow hover:shadow-lg ${compact ? "flex flex-col" : ""}`}>
+    <Card className={`group h-full overflow-hidden border-0 py-0 transition-shadow hover:shadow-lg ${compact ? "flex flex-col" : ""}`}>
       <div className={`relative overflow-hidden bg-muted ${compact ? "aspect-[4/3]" : "aspect-square"}`}>
         <Image
           src={product.image}
@@ -61,14 +65,31 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
       </div>
       <CardContent className={`flex flex-1 flex-col ${compact ? "p-3" : "p-4"}`}>
         <h3 className="font-medium text-foreground line-clamp-1">{product.name}</h3>
-        <p className="mt-1 min-h-10 text-sm text-muted-foreground line-clamp-2">
+        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
           {product.description}
         </p>
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-3 flex items-end justify-between gap-3">
           <div>
-            <span className="text-lg font-semibold text-foreground">
-              {formatPrice(product.price)}
-            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-semibold text-foreground">{formatPrice(displayPrice)}</span>
+              {priceOverride !== undefined && <span className="text-xs text-muted-foreground line-through">{formatPrice(product.price)}</span>}
+            </div>
+            {product.category === "mates" && (
+              <div className="mt-2 flex items-center gap-2" aria-label="Color del mate">
+                {(["marron", "negro"] as const).map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    aria-label={`Color ${color}`}
+                    aria-pressed={selectedColor === color}
+                    title={color === "marron" ? "Marrón" : "Negro"}
+                    onClick={() => setSelectedColor(color)}
+                    className={`h-6 w-6 rounded-sm border-2 ${color === "marron" ? "bg-[#6b4428]" : "bg-black"} ${selectedColor === color ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+                  />
+                ))}
+              </div>
+            )}
+            {promoLabel && <p className="mt-1 text-xs font-medium text-primary">{promoLabel}</p>}
             {isLowStock && !isOutOfStock && (
               <p className="text-xs text-accent">Solo {stock} disponibles</p>
             )}

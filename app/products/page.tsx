@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense } from "react"
-import { useState, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 import { Filter, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,21 +10,35 @@ import { ProductCard } from "@/components/product-card"
 import { useCart } from "@/lib/cart-context"
 import { CATEGORIES, SUBCATEGORIES, type Category, type SubcategoryId } from "@/lib/types"
 
+type CatalogFilter = Category | "featured"
+
 function ProductsContent() {
   const searchParams = useSearchParams()
-  const initialCategory = searchParams?.get("category") as Category | null
+  const initialCategory = searchParams?.get("category") as CatalogFilter | null
   const initialSubcategory = searchParams?.get("subcategory") as SubcategoryId | null
   
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(initialCategory)
+  const [selectedCategory, setSelectedCategory] = useState<CatalogFilter | null>(initialCategory)
   const [selectedSubcategory, setSelectedSubcategory] = useState<SubcategoryId | null>(initialSubcategory)
   const [expandedCategory, setExpandedCategory] = useState<Category | null>(initialCategory === "mates" ? "mates" : null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const { products } = useCart()
 
+  useEffect(() => {
+    setSelectedCategory(initialCategory)
+    setSelectedSubcategory(initialSubcategory)
+    setExpandedCategory(initialCategory === "mates" ? "mates" : null)
+  }, [initialCategory, initialSubcategory])
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [selectedCategory, selectedSubcategory])
+
   const filteredProducts = useMemo(() => {
     let filtered = products
     
-    if (selectedCategory) {
+    if (selectedCategory === "featured") {
+      filtered = filtered.filter((product) => product.featured === true)
+    } else if (selectedCategory) {
       filtered = filtered.filter((product) => product.category === selectedCategory)
     }
     
@@ -35,7 +49,7 @@ function ProductsContent() {
     return filtered
   }, [products, selectedCategory, selectedSubcategory])
 
-  const handleCategorySelect = (category: Category) => {
+  const handleCategorySelect = (category: CatalogFilter) => {
     setSelectedCategory(category)
     setSelectedSubcategory(null)
     if (category === "mates") {
@@ -52,6 +66,20 @@ function ProductsContent() {
 
   const CategoryFilters = ({ onSelect }: { onSelect?: () => void }) => (
     <div className="space-y-2">
+      <button
+        onClick={() => {
+          handleCategorySelect("featured")
+          onSelect?.()
+        }}
+        className={`w-full rounded-lg px-4 py-2 text-left text-sm font-medium transition-colors ${
+          selectedCategory === "featured"
+            ? "bg-amber-500 text-white"
+            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+        }`}
+      >
+        Destacados
+      </button>
+
       <button
         onClick={() => {
           setSelectedCategory(null)
@@ -144,7 +172,7 @@ function ProductsContent() {
           </h1>
           <p className="mt-2 text-muted-foreground">
             {filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}
-            {selectedCategory && ` en ${CATEGORIES.find((c) => c.id === selectedCategory)?.name}`}
+            {selectedCategory && ` en ${selectedCategory === "featured" ? "Destacados" : CATEGORIES.find((c) => c.id === selectedCategory)?.name}`}
             {selectedSubcategory && ` - ${SUBCATEGORIES.find((s) => s.id === selectedSubcategory)?.name}`}
           </p>
         </div>

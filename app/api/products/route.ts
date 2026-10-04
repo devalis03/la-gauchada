@@ -32,11 +32,11 @@ export async function POST(request: Request) {
 function validateProductInput(body: Partial<Product>) {
   if (
     typeof body.name !== "string" || !body.name.trim() ||
-    typeof body.description !== "string" || !body.description.trim() ||
+    typeof body.description !== "string" ||
     typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0 ||
     typeof body.image !== "string" || !body.image.trim() ||
     typeof body.category !== "string" ||
-    !["promos", "mates", "materas", "yerberos", "termos", "bombillas", "otros"].includes(body.category) ||
+    !["promos", "mates", "materas", "yerberos", "termos", "bombillas", "cuchillos-tablas", "boinas-ponchos", "otros"].includes(body.category) ||
     (body.category === "mates" && !body.subcategory) ||
     (body.category !== "mates" && body.subcategory !== undefined && body.subcategory !== null) ||
     (body.subcategory !== undefined && body.subcategory !== null &&

@@ -1,15 +1,16 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
-import type { Product, CartItem } from "./types"
+import type { Product, CartItem, ProductColor } from "./types"
 import { initialProducts } from "./products"
+import { getCartItemPrice } from "./cart-pricing"
 
 interface CartContextType {
   items: CartItem[]
   products: Product[]
-  addToCart: (product: Product, quantity?: number) => boolean
-  removeFromCart: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => boolean
+  addToCart: (product: Product, quantity?: number, selectedColor?: ProductColor, priceOverride?: number) => boolean
+  removeFromCart: (productId: string, selectedColor?: ProductColor) => void
+  updateQuantity: (productId: string, quantity: number, selectedColor?: ProductColor) => boolean
   clearCart: () => void
   getCartTotal: () => number
   getCartCount: () => number
@@ -101,11 +102,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, isHydrated])
 
-  const addToCart = useCallback((product: Product, quantity = 1): boolean => {
+  const addToCart = useCallback((product: Product, quantity = 1, selectedColor?: ProductColor, priceOverride?: number): boolean => {
     const currentProduct = products.find(p => p.id === product.id)
     if (!currentProduct) return false
 
-    const existingItem = items.find(item => item.product.id === product.id)
+    const existingItem = items.find(item => item.product.id === product.id && item.selectedColor === selectedColor && item.priceOverride === priceOverride)
     const currentQty = existingItem?.quantity || 0
     const newQty = currentQty + quantity
 
@@ -117,23 +118,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const existing = prev.find(item => item.product.id === product.id)
       if (existing) {
         return prev.map(item =>
-          item.product.id === product.id
+          item.product.id === product.id && item.selectedColor === selectedColor && item.priceOverride === priceOverride
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       }
-      return [...prev, { product: currentProduct, quantity }]
+      return [...prev, { product: currentProduct, quantity, selectedColor, priceOverride }]
     })
     return true
   }, [items, products])
 
-  const removeFromCart = useCallback((productId: string) => {
-    setItems(prev => prev.filter(item => item.product.id !== productId))
+  const removeFromCart = useCallback((productId: string, selectedColor?: ProductColor) => {
+    setItems(prev => prev.filter(item => !(item.product.id === productId && item.selectedColor === selectedColor)))
   }, [])
 
-  const updateQuantity = useCallback((productId: string, quantity: number): boolean => {
+  const updateQuantity = useCallback((productId: string, quantity: number, selectedColor?: ProductColor): boolean => {
     if (quantity < 1) {
-      removeFromCart(productId)
+      removeFromCart(productId, selectedColor)
       return true
     }
 
@@ -144,7 +145,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     setItems(prev =>
       prev.map(item =>
-        item.product.id === productId ? { ...item, quantity } : item
+        item.product.id === productId && item.selectedColor === selectedColor ? { ...item, quantity } : item
       )
     )
     return true
@@ -155,7 +156,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const getCartTotal = useCallback(() => {
-    return items.reduce((total, item) => total + item.product.price * item.quantity, 0)
+    return items.reduce((total, item) => total + getCartItemPrice(item) * item.quantity, 0)
   }, [items])
 
   const getCartCount = useCallback(() => {

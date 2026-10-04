@@ -9,24 +9,24 @@ import { Button } from "@/components/ui/button"
 const slides = [
   {
     id: 1,
-    title: "El Arte del Mate",
-    subtitle: "Experimenta la tradición auténtica sudamericana",
-    image: "/images/hero-mate.jpg",
-    cta: { text: "Comprar Ahora", href: "/products" },
+    title: "Pequeños mates, grandes momentos",
+    subtitle: "Tradición argentina para compartir todos los días.",
+    image: "/images/hero-1.jpg",
+    cta: { text: "Ver Mates", href: "/products?category=mates" },
   },
   {
     id: 2,
-    title: "Yerba Mate Premium",
-    subtitle: "Mezclas cuidadosamente seleccionadas para el sabor perfecto",
-    image: "/images/hero-yerba.jpg",
-    cta: { text: "Ver Yerbas", href: "/products?category=otros" },
+    title: "Un mate hecho para vos.",
+    subtitle: "Personalizamos nombres, iniciales, fechas, logos y diseños.",
+    image: "/images/hero-2.jpg",
+    cta: { text: "Personalizar el mío", href: "/products?category=otros" },
   },
   {
     id: 3,
-    title: "Kits de Mate Completos",
-    subtitle: "Todo lo que necesitas en un solo paquete",
-    image: "/images/hero-kit.jpg",
-    cta: { text: "Ver Kits", href: "/products?category=promos" },
+    title: "El regalo que siempre funciona",
+    subtitle: "Combos materos listos para regalar y compartir.",
+    image: "/images/hero-3.jpg",
+    cta: { text: "Ver Promos", href: "/products?category=promos" },
   },
 ]
 
@@ -52,8 +52,9 @@ export function HeroCarousel() {
         <div
           key={slide.id}
           className={`absolute inset-0 transition-opacity duration-700 ${
-            index === current ? "opacity-100" : "opacity-0"
+            index === current ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
+          aria-hidden={index !== current}
         >
           <Image
             src={slide.image}

@@ -9,6 +9,8 @@ const categoryImages: Record<string, string> = {
   "yerberos": "/images/yerbera-cuero.jpg",
   "termos": "/images/termo-stanley.jpg",
   "bombillas": "/images/bombilla-alpaca.jpg",
+  "cuchillos-tablas": "/images/otros.jpg",
+  "boinas-ponchos": "/images/poncho.jpg",
   "otros": "/images/cepillo-bombilla.jpg",
 }
 
@@ -25,12 +27,12 @@ export function CategoryGrid() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 flex flex-wrap justify-center gap-4">
           {CATEGORIES.map((category) => (
             <Link
               key={category.id}
               href={`/products?category=${category.id}`}
-              className="group relative aspect-[4/3] overflow-hidden rounded-lg lg:aspect-square"
+              className="group relative aspect-[4/3] w-full overflow-hidden rounded-lg sm:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)] lg:aspect-square"
             >
               <Image
                 src={categoryImages[category.id]}

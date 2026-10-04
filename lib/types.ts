@@ -9,9 +9,12 @@ export interface Product {
   stock: number
   featured?: boolean
   active?: boolean
+  colors?: ProductColor[]
 }
 
-export type Category = "promos" | "mates" | "materas" | "yerberos" | "termos" | "bombillas" | "otros"
+export type Category = "promos" | "mates" | "materas" | "yerberos" | "termos" | "bombillas" | "cuchillos-tablas" | "boinas-ponchos" | "otros"
+
+export type ProductColor = "marron" | "negro"
 
 export type SubcategoryId = "mates-imperiales" | "mates-tradicionales" | "mates-torpedos"
 
@@ -25,6 +28,8 @@ export interface CartItem {
   product: Product
   quantity: number
   stockItems?: StockItem[]
+  selectedColor?: ProductColor
+  priceOverride?: number
 }
 
 export interface StockItem {
@@ -85,6 +90,8 @@ export const CATEGORIES: { id: Category; name: string; description: string }[] =
   { id: "yerberos", name: "Yerberos", description: "Contenedores de yerba" },
   { id: "termos", name: "Termos", description: "Termos para agua caliente" },
   { id: "bombillas", name: "Bombillas", description: "Bombillas" },
+  { id: "cuchillos-tablas", name: "Cuchillos y Tablas", description: "Cuchillos y tablas para compartir" },
+  { id: "boinas-ponchos", name: "Boinas y Ponchos", description: "Indumentaria tradicional" },
   { id: "otros", name: "Otros", description: "Otros accesorios" },
 ]
 

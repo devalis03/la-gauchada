@@ -7,6 +7,7 @@ import {
   restoreOrderStockIfNeeded,
   setOrderPayment,
 } from "@/lib/repositories/orders-repo"
+import { sendOrderConfirmationEmails } from "@/lib/email-service"
 
 function getMpClient() {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
@@ -70,7 +71,11 @@ export async function POST(request: NextRequest) {
       await rereserveOrderStockIfNeeded(order.id)
     }
 
-    await setOrderPayment(order.id, paymentStatus, paymentId)
+    const updatedOrder = await setOrderPayment(order.id, paymentStatus, paymentId)
+
+    if (paymentStatus === "approved" && updatedOrder) {
+      await sendOrderConfirmationEmails(updatedOrder)
+    }
 
     if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
       await restoreOrderStockIfNeeded(order.id)

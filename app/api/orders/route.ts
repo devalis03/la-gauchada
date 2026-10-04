@@ -5,6 +5,8 @@ import {
   listProducts,
   reserveOrderStock,
 } from "@/lib/repositories/products-repo"
+import { sendOrderConfirmationEmails } from "@/lib/email-service"
+import { getRecommendedPrice, hasMateInCart } from "@/lib/cart-pricing"
 
 export async function GET() {
   try {
@@ -42,22 +44,35 @@ export async function POST(req: NextRequest) {
     const productsById = new Map(products.map((product) => [product.id, product]))
     const items = submittedOrder.items.map((item) => {
       const product = productsById.get(item.product.id)
-      return product ? { product, quantity: item.quantity } : null
+      return product ? {
+        product,
+        quantity: item.quantity,
+        selectedColor: item.selectedColor,
+      } : null
     })
 
     if (items.some((item) => item === null)) {
       return NextResponse.json({ error: "El pedido contiene un producto inválido" }, { status: 400 })
     }
 
-    const trustedItems = items as Order["items"]
+    const trustedItems = (items as Order["items"]).map((item) => ({
+      ...item,
+      selectedColor: item.product.category === "mates" && (item.selectedColor === "marron" || item.selectedColor === "negro")
+        ? item.selectedColor
+        : undefined,
+    }))
+    const pricedItems = trustedItems.map((item) => {
+      const price = getRecommendedPrice(item.product, trustedItems)
+      return price !== item.product.price ? { ...item, priceOverride: price } : { ...item, priceOverride: undefined }
+    })
     const subtotal = trustedItems.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
+      (sum, item) => sum + getRecommendedPrice(item.product, pricedItems) * item.quantity,
       0
     )
     const shipping = subtotal > 50 ? 0 : 8.99
     const order: Order = {
       ...submittedOrder,
-      items: trustedItems,
+      items: pricedItems,
       subtotal,
       shipping,
       total: subtotal + shipping,
@@ -81,6 +96,15 @@ export async function POST(req: NextRequest) {
 
     try {
       const created = await createOrderRecord(order)
+
+      if (created.paymentMethod === "efectivo") {
+        try {
+          await sendOrderConfirmationEmails(created)
+        } catch (emailError) {
+          console.error("Order confirmation email error:", emailError)
+        }
+      }
+
       return NextResponse.json({ data: created }, { status: 201 })
     } catch (createError) {
       // La RPC de restauración es idempotente y devuelve el stock reservado.
