@@ -41,7 +41,11 @@ function validateProductInput(body: Partial<Product>) {
     (body.subcategory !== undefined && body.subcategory !== null &&
       !SUBCATEGORIES.some((subcategory) => subcategory.id === body.subcategory)) ||
     typeof body.stock !== "number" || !Number.isInteger(body.stock) || body.stock < 0 ||
-    (body.colors !== undefined && (!Array.isArray(body.colors) || body.colors.some((color) => typeof color !== "string")))
+    (body.colors !== undefined && (!Array.isArray(body.colors) || body.colors.some((color) => typeof color !== "string"))) ||
+    (body.colorImages !== undefined && (
+      typeof body.colorImages !== "object" || body.colorImages === null || Array.isArray(body.colorImages) ||
+      Object.values(body.colorImages).some((url) => typeof url !== "string" || !url.trim())
+    ))
   ) {
     return null
   }
@@ -57,5 +61,8 @@ function validateProductInput(body: Partial<Product>) {
     featured: body.featured === true,
     active: body.active !== false,
     colors: body.colors?.map((color) => color.trim()).filter(Boolean) ?? [],
+    colorImages: body.colorImages
+      ? Object.fromEntries(Object.entries(body.colorImages).map(([color, url]) => [color.trim(), url.trim()]))
+      : {},
   }
 }

@@ -6,7 +6,7 @@ import {
   reserveOrderStock,
 } from "@/lib/repositories/products-repo"
 import { sendOrderConfirmationEmails } from "@/lib/email-service"
-import { getRecommendedPrice, hasMateInCart } from "@/lib/cart-pricing"
+import { getCartItemPrice, getRecommendedPrice, hasMateInCart } from "@/lib/cart-pricing"
 
 export async function GET() {
   try {
@@ -44,11 +44,40 @@ export async function POST(req: NextRequest) {
     const productsById = new Map(products.map((product) => [product.id, product]))
     const items = submittedOrder.items.map((item) => {
       const product = productsById.get(item.product.id)
-      return product ? {
-        product,
-        quantity: item.quantity,
-        selectedColor: item.selectedColor,
-      } : null
+        if (!product) return null
+
+        const bundleSelections = product.bundle
+          ? Object.fromEntries(product.bundle.components.flatMap((component) => {
+              const componentProduct = productsById.get(component.productId)
+              const selectedColor = item.bundleSelections?.[component.productId]
+              return componentProduct?.colors?.includes(selectedColor ?? "")
+                ? [[component.productId, selectedColor as string]]
+                : []
+            }))
+          : undefined
+        const bundleComponentNames = product.bundle
+          ? Object.fromEntries(product.bundle.components.flatMap((component) => {
+              const componentProduct = productsById.get(component.productId)
+              return componentProduct ? [[component.productId, componentProduct.name]] : []
+            }))
+          : undefined
+        const engraving = product.category !== "promos" && item.engraving
+          ? {
+              text: typeof item.engraving.text === "string" ? item.engraving.text.trim().slice(0, 200) : undefined,
+              image: typeof item.engraving.image === "string" && item.engraving.image.startsWith("data:image/") && item.engraving.image.length <= 2_000_000
+                ? item.engraving.image
+                : undefined,
+            }
+          : undefined
+
+        return {
+          product,
+          quantity: item.quantity,
+          selectedColor: item.selectedColor,
+          bundleSelections: bundleSelections && Object.keys(bundleSelections).length > 0 ? bundleSelections : undefined,
+          bundleComponentNames: bundleComponentNames && Object.keys(bundleComponentNames).length > 0 ? bundleComponentNames : undefined,
+          engraving: engraving && (engraving.text || engraving.image) ? engraving : undefined,
+        }
     })
 
     if (items.some((item) => item === null)) {
@@ -65,8 +94,8 @@ export async function POST(req: NextRequest) {
       const price = getRecommendedPrice(item.product, trustedItems)
       return price !== item.product.price ? { ...item, priceOverride: price } : { ...item, priceOverride: undefined }
     })
-    const subtotal = trustedItems.reduce(
-      (sum, item) => sum + getRecommendedPrice(item.product, pricedItems) * item.quantity,
+    const subtotal = pricedItems.reduce(
+      (sum, item) => sum + getCartItemPrice(item) * item.quantity,
       0
     )
     const shipping = subtotal > 50 ? 0 : 8.99

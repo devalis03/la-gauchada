@@ -42,9 +42,9 @@ export function HeroCarousel() {
   }, [])
 
   useEffect(() => {
-    const timer = setInterval(next, 6000)
+    const timer = setInterval(next, 10000)
     return () => clearInterval(timer)
-  }, [next])
+  }, [current, next])
 
   return (
     <section className="relative h-[500px] overflow-hidden bg-muted md:h-[600px] lg:h-[700px]">

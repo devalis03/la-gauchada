@@ -16,6 +16,7 @@ export interface Database {
           featured: boolean
           active: boolean
           colors: string[]
+          color_images: Json
           created_at: string
           updated_at: string
         }
@@ -31,6 +32,7 @@ export interface Database {
           featured?: boolean
           active?: boolean
           colors?: string[]
+          color_images?: Json
           created_at?: string
           updated_at?: string
         }
@@ -46,6 +48,7 @@ export interface Database {
           featured?: boolean
           active?: boolean
           colors?: string[]
+          color_images?: Json
           created_at?: string
           updated_at?: string
         }
