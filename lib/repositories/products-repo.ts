@@ -13,7 +13,12 @@ function mapProductRowToDomain(row: {
   featured: boolean
   active?: boolean
   colors?: string[] | null
+  color_images?: unknown
 }): Product {
+  const colorImages = row.color_images && typeof row.color_images === "object" && !Array.isArray(row.color_images)
+    ? Object.fromEntries(Object.entries(row.color_images).filter(([, url]) => typeof url === "string" && url.trim()))
+    : undefined
+
   return {
     id: row.id,
     name: row.name,
@@ -26,10 +31,11 @@ function mapProductRowToDomain(row: {
     featured: row.featured,
     active: row.active ?? true,
     colors: row.colors ?? undefined,
+    colorImages: colorImages && Object.keys(colorImages).length > 0 ? colorImages : undefined,
   }
 }
 
-const productSelect = "id, name, description, price, image, category, subcategory, stock, featured, active, colors"
+const productSelect = "id, name, description, price, image, category, subcategory, stock, featured, active, colors, color_images"
 
 export async function listProducts(includeInactive = false): Promise<Product[]> {
   const supabase = getSupabaseAdminClient()
@@ -68,7 +74,7 @@ export async function listProducts(includeInactive = false): Promise<Product[]> 
     const available = components.length === 0
       ? 0
       : Math.min(...components.map((component) => Math.floor((stockById.get(component.productId) ?? 0) / component.quantity)))
-    return { ...product, stock: available }
+    return { ...product, stock: available, bundle: { productId: product.id, components } }
   })
 }
 
@@ -104,13 +110,15 @@ export type ProductInput = {
   featured: boolean
   active: boolean
   colors?: string[]
+  colorImages?: Record<string, string>
 }
 
 export async function createProduct(input: ProductInput): Promise<Product> {
   const supabase = getSupabaseAdminClient()
+  const { colorImages, ...productInput } = input
   const { data, error } = await supabase
     .from("products")
-    .insert(input)
+    .insert({ ...productInput, color_images: colorImages ?? {} })
     .select(productSelect)
     .single()
 
@@ -133,9 +141,10 @@ export async function updateProduct(
   input: Omit<ProductInput, "id">
 ): Promise<Product | null> {
   const supabase = getSupabaseAdminClient()
+  const { colorImages, ...productInput } = input
   const { data, error } = await supabase
     .from("products")
-    .update(input)
+    .update({ ...productInput, color_images: colorImages ?? {} })
     .eq("id", productId)
     .select(productSelect)
     .maybeSingle()

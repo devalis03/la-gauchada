@@ -10,7 +10,7 @@ export function AboutIntro() {
           <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
             <Image
               src="/images/inicio-about.jpg"
-              alt="Productos con identidad argentina de La Gauchada"
+              alt="Productos con identidad argentina de La Gauchada Mates"
               fill
               className="object-cover object-[center_70%]"
               sizes="(max-width: 1024px) 100vw, 50vw"

@@ -77,6 +77,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
   const [colorInput, setColorInput] = useState("")
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
+  const [colorImageFiles, setColorImageFiles] = useState<Record<string, File>>({})
+  const [colorImageUrls, setColorImageUrls] = useState<Record<string, string>>({})
   const [bundleComponents, setBundleComponents] = useState<BundleComponent[]>([])
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [isProductFormOpen, setIsProductFormOpen] = useState(false)
@@ -98,7 +100,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
     if (isProductFormOpen) {
       productFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }
-  }, [isProductFormOpen])
+  }, [isProductFormOpen, editingProductId])
 
   const handleLogout = async () => {
     await fetch("/api/admin/logout", { method: "POST" })
@@ -171,6 +173,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
     setColorInput("")
     setSelectedImageFile(null)
     setImagePreview(emptyProductForm.image)
+    setColorImageFiles({})
+    setColorImageUrls({})
     setBundleComponents([])
     setProductError(null)
     setIsProductFormOpen(true)
@@ -183,6 +187,8 @@ const categoryPrefixes: Record<Product["category"], string> = {
     setColorInput(product.colors?.join(", ") ?? "")
     setSelectedImageFile(null)
     setImagePreview(product.image)
+    setColorImageFiles({})
+    setColorImageUrls(product.colorImages ?? {})
     setBundleComponents([])
     setProductError(null)
     setIsProductFormOpen(true)
@@ -208,6 +214,12 @@ const categoryPrefixes: Record<Product["category"], string> = {
     const file = event.target.files?.[0] ?? null
     setSelectedImageFile(file)
     if (file) setImagePreview(URL.createObjectURL(file))
+  }
+
+  const handleColorImageChange = (color: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setColorImageFiles((previous) => ({ ...previous, [color]: file }))
   }
 
   const getCalculatedBundleStock = () => {
@@ -255,15 +267,50 @@ const categoryPrefixes: Record<Product["category"], string> = {
       image = imagePayload.data.url
     }
 
-    const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/products", {
+    const colorImages = normalizedColors.length > 1
+      ? Object.fromEntries(normalizedColors.flatMap((color) => colorImageUrls[color] ? [[color, colorImageUrls[color]]] : []))
+      : {}
+
+    const response = await fetch(editingProductId ? `/api/products/${editingProductId}` : "/api/products", {
       method: editingProductId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...productForm, image, colors: normalizedColors }),
+      body: JSON.stringify({ ...productForm, image, colors: normalizedColors, colorImages }),
     })
     const payload = await response.json() as { data?: Product; error?: string }
     if (!response.ok || !payload.data) {
       setProductError(payload.error ?? "No se pudo guardar el producto")
       return
+    }
+
+    const uploadedColorImages = { ...colorImages }
+    let colorImagesChanged = false
+    if (normalizedColors.length > 1) {
+      for (const [color, file] of Object.entries(colorImageFiles).filter(([color]) => normalizedColors.includes(color))) {
+        const imageData = new FormData()
+        imageData.append("file", file)
+        imageData.append("productId", payload.data.id)
+        const imageResponse = await fetch("/api/admin/product-images", { method: "POST", body: imageData })
+        const imagePayload = await imageResponse.json() as { data?: { url: string }; error?: string }
+        if (!imageResponse.ok || !imagePayload.data?.url) {
+          setProductError(imagePayload.error ?? `No se pudo subir la imagen de ${color}`)
+          return
+        }
+        uploadedColorImages[color] = imagePayload.data.url
+        colorImagesChanged = true
+      }
+    }
+
+    if (colorImagesChanged) {
+      const imageUpdateResponse = await fetch(`/api/products/${payload.data.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload.data, colorImages: uploadedColorImages }),
+      })
+      if (!imageUpdateResponse.ok) {
+        const imageUpdatePayload = await imageUpdateResponse.json() as { error?: string }
+        setProductError(imageUpdatePayload.error ?? "No se pudieron guardar las imágenes por color")
+        return
+      }
     }
 
     if (productForm.category === "promos") {
@@ -550,6 +597,20 @@ const categoryPrefixes: Record<Product["category"], string> = {
                           value={colorInput}
                           onChange={(event) => setColorInput(event.target.value)}
                         />
+                      )}
+                      {hasColorOptions && colorInput.split(",").map((color) => color.trim()).filter(Boolean).length > 1 && (
+                        <div className="space-y-3 border-t pt-3">
+                          <p className="text-sm font-medium">Imágenes opcionales por color</p>
+                          {colorInput.split(",").map((color) => color.trim()).filter(Boolean).map((color) => (
+                            <div key={color} className="grid gap-2 sm:grid-cols-[140px_1fr] sm:items-center">
+                              <span className="text-sm">{color}</span>
+                              <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => handleColorImageChange(color, event)} />
+                              <span className="text-xs text-muted-foreground sm:col-start-2">
+                                {colorImageFiles[color]?.name ?? (colorImageUrls[color] ? "Conserva la imagen actual" : "Sin imagen adicional; usará la principal")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                       <p className="text-xs text-muted-foreground">Separá los colores con comas. Si no se marca, el catálogo no mostrará opciones.</p>
                     </div>

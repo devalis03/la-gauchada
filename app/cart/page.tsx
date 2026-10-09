@@ -43,7 +43,12 @@ export default function CartPage() {
   const cartProductIds = new Set(items.map((item) => item.product.id))
   const recommendedProducts = products
     .filter((product) => product.active !== false && product.stock > 0 && !cartProductIds.has(product.id))
-    .sort((first, second) => Number(second.featured === true) - Number(first.featured === true))
+    .sort((first, second) => {
+      const firstIsMateOffer = hasMate && first.id === PICO_DE_ORO_ID
+      const secondIsMateOffer = hasMate && second.id === PICO_DE_ORO_ID
+      if (firstIsMateOffer !== secondIsMateOffer) return firstIsMateOffer ? -1 : 1
+      return Number(second.featured === true) - Number(first.featured === true)
+    })
     .slice(0, 8)
 
   const scrollRecommendations = (direction: "left" | "right") => {
@@ -71,19 +76,19 @@ export default function CartPage() {
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-8">
           {/* Cart Items */}
           <div className="min-w-0 space-y-4">
-            {items.map((item) => {
+            {items.map((item, itemIndex) => {
               const currentProduct = products.find((p) => p.id === item.product.id)
               const maxStock = currentProduct?.stock ?? item.product.stock
               const isOverStock = item.quantity > maxStock
 
               return (
-                <Card key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.priceOverride ?? "regular"}`} className={isOverStock ? "border-destructive py-0" : "border-0 py-0"}>
+                <Card key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.priceOverride ?? "regular"}-${itemIndex}`} className={isOverStock ? "border-destructive py-0" : "border-0 py-0"}>
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       {/* Image */}
                       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                         <Image
-                          src={item.product.image}
+                          src={item.selectedColor ? item.product.colorImages?.[item.selectedColor] ?? item.product.image : item.product.image}
                           alt={item.product.name}
                           fill
                           className="object-cover"
@@ -101,11 +106,23 @@ export default function CartPage() {
                             <p className="mt-1 text-sm text-muted-foreground">
                               {formatPrice(getCartItemPrice(item))} c/u{item.selectedColor ? ` · ${formatProductColor(item.selectedColor)}` : ""}
                             </p>
+                            {item.bundleSelections && Object.keys(item.bundleSelections).length > 0 && (
+                              <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                {Object.entries(item.bundleSelections).map(([productId, color]) => (
+                                  <p key={productId}>Color {products.find((product) => product.id === productId)?.name ?? "del componente"}: {formatProductColor(color)}</p>
+                                ))}
+                              </div>
+                            )}
+                            {item.engraving && (
+                              <p className="mt-1 text-xs font-medium text-primary">
+                                Grabado incluido{item.engraving.text ? `: ${item.engraving.text}` : ""}
+                              </p>
+                            )}
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeFromCart(item.product.id, item.selectedColor)}
+                            onClick={() => removeFromCart(item)}
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -121,7 +138,7 @@ export default function CartPage() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() =>
-                                updateQuantity(item.product.id, item.quantity - 1, item.selectedColor)
+                                updateQuantity(item, item.quantity - 1)
                               }
                             >
                               <Minus className="h-3 w-3" />
@@ -135,7 +152,7 @@ export default function CartPage() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() =>
-                                updateQuantity(item.product.id, item.quantity + 1, item.selectedColor)
+                                updateQuantity(item, item.quantity + 1)
                               }
                               disabled={item.quantity >= maxStock}
                             >
@@ -190,6 +207,7 @@ export default function CartPage() {
                         compact
                         priceOverride={product.id === PICO_DE_ORO_ID && hasMate ? getRecommendedPrice(product, items) : undefined}
                         promoLabel={product.id === PICO_DE_ORO_ID && hasMate ? "Oferta con tu mate" : undefined}
+                        detailOnly={product.id === PICO_DE_ORO_ID && hasMate}
                       />
                     </div>
                   ))}

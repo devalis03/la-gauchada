@@ -1,16 +1,16 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
-import type { Product, CartItem, ProductColor } from "./types"
+import type { Product, CartItem, ProductColor, EngravingOptions } from "./types"
 import { initialProducts } from "./products"
 import { getCartItemPrice } from "./cart-pricing"
 
 interface CartContextType {
   items: CartItem[]
   products: Product[]
-  addToCart: (product: Product, quantity?: number, selectedColor?: ProductColor, priceOverride?: number) => boolean
-  removeFromCart: (productId: string, selectedColor?: ProductColor) => void
-  updateQuantity: (productId: string, quantity: number, selectedColor?: ProductColor) => boolean
+  addToCart: (product: Product, quantity?: number, selectedColor?: ProductColor, priceOverride?: number, options?: { bundleSelections?: Record<string, ProductColor>; engraving?: EngravingOptions }) => boolean
+  removeFromCart: (item: CartItem) => void
+  updateQuantity: (item: CartItem, quantity: number) => boolean
   clearCart: () => void
   getCartTotal: () => number
   getCartCount: () => number
@@ -102,54 +102,62 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, isHydrated])
 
-  const addToCart = useCallback((product: Product, quantity = 1, selectedColor?: ProductColor, priceOverride?: number): boolean => {
+  const addToCart = useCallback((product: Product, quantity = 1, selectedColor?: ProductColor, priceOverride?: number, options?: { bundleSelections?: Record<string, ProductColor>; engraving?: EngravingOptions }): boolean => {
     const currentProduct = products.find(p => p.id === product.id)
     if (!currentProduct) return false
 
-    const existingItem = items.find(item => item.product.id === product.id && item.selectedColor === selectedColor && item.priceOverride === priceOverride)
-    const currentQty = existingItem?.quantity || 0
-    const newQty = currentQty + quantity
+    const matchesVariant = (item: CartItem) => item.product.id === product.id && item.selectedColor === selectedColor && item.priceOverride === priceOverride &&
+      JSON.stringify(item.bundleSelections ?? {}) === JSON.stringify(options?.bundleSelections ?? {}) &&
+      JSON.stringify(item.engraving ?? {}) === JSON.stringify(options?.engraving ?? {})
+    const existingItem = items.find(matchesVariant)
+    const reservedQty = items
+      .filter((item) => item.product.id === product.id)
+      .reduce((total, item) => total + item.quantity, 0)
+    const newQty = reservedQty + quantity
 
     if (newQty > currentProduct.stock) {
       return false // Not enough stock
     }
 
     setItems(prev => {
-      const existing = prev.find(item => item.product.id === product.id)
+      const existing = prev.find(matchesVariant)
       if (existing) {
         return prev.map(item =>
-          item.product.id === product.id && item.selectedColor === selectedColor && item.priceOverride === priceOverride
+          matchesVariant(item)
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       }
-      return [...prev, { product: currentProduct, quantity, selectedColor, priceOverride }]
+      return [...prev, { product: currentProduct, quantity, selectedColor, priceOverride, ...options }]
     })
     return true
   }, [items, products])
 
-  const removeFromCart = useCallback((productId: string, selectedColor?: ProductColor) => {
-    setItems(prev => prev.filter(item => !(item.product.id === productId && item.selectedColor === selectedColor)))
+  const removeFromCart = useCallback((targetItem: CartItem) => {
+    setItems(prev => prev.filter(item => item !== targetItem))
   }, [])
 
-  const updateQuantity = useCallback((productId: string, quantity: number, selectedColor?: ProductColor): boolean => {
+  const updateQuantity = useCallback((targetItem: CartItem, quantity: number): boolean => {
     if (quantity < 1) {
-      removeFromCart(productId, selectedColor)
+      removeFromCart(targetItem)
       return true
     }
 
-    const product = products.find(p => p.id === productId)
-    if (!product || quantity > product.stock) {
+    const product = products.find(p => p.id === targetItem.product.id)
+    const otherVariantsQty = items
+      .filter((item) => item.product.id === targetItem.product.id && item !== targetItem)
+      .reduce((total, item) => total + item.quantity, 0)
+    if (!product || otherVariantsQty + quantity > product.stock) {
       return false // Not enough stock
     }
 
     setItems(prev =>
       prev.map(item =>
-        item.product.id === productId && item.selectedColor === selectedColor ? { ...item, quantity } : item
+        item === targetItem ? { ...item, quantity } : item
       )
     )
     return true
-  }, [products, removeFromCart])
+  }, [items, products, removeFromCart])
 
   const clearCart = useCallback(() => {
     setItems([])

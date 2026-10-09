@@ -3,10 +3,11 @@ import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/lib/cart-context'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { WhatsappButton } from '@/components/whatsapp-button'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'La Gauchada | Yerba Mate Premium y Accesorios',
+  title: 'La Gauchada Mates | Yerba Mate Premium y Accesorios',
   description: 'Descubre auténtica yerba mate sudamericana, calabazas tradicionales, termos, bombillas y accesorios. Vive el ritual perfecto del mate.',
   keywords: ['yerba mate', 'calabaza mate', 'bombilla', 'termo', 'mate argentino', 'mate sudamericano'],
   icons: {
@@ -36,6 +37,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <SiteFooter />
           </div>
+          <WhatsappButton />
         </CartProvider>
         <Analytics />
       </body>

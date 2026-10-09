@@ -24,16 +24,16 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/images/logo.png" alt="La Gauchada" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+              <Image src="/images/logo.png" alt="La Gauchada Mates" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
               <span className="text-xl font-semibold tracking-tight text-foreground">
-                La Gauchada
+                La Gauchada Mates
               </span>
             </Link>
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Traemos la experiencia auténtica del mate sudamericano a tu hogar. 
-              Yerba mate premium, calabazas tradicionales y todos los accesorios que necesitas 
-              para el ritual perfecto del mate.
-            </p>
+            <div className="mt-4 max-w-md space-y-3 text-sm leading-relaxed text-muted-foreground">
+              <p>Compartimos mucho mas que un mate.</p>
+              <p>En La Gauchada buscamos mantener vivas esas costumbres que nos unen: una ronda, una charla, un regalo, un buen momento.</p>
+              <p>Mates, accesorios y productos con identidad argentina, elegidos y personalizados para acompañarte en cada gauchada.</p>
+            </div>
             <div className="mt-6 flex gap-4">
               <a
                 href="https://www.instagram.com/lagauchada.mates?igsh=b2pxbjVxMG16emQ5"
@@ -45,7 +45,7 @@ export function SiteFooter() {
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="https://wa.me/5493815764026?text=Hola%2C%20quiero%20conocer%20m%C3%A1s%20sobre%20los%20productos%20de%20La%20Gauchada."
+                href="https://wa.me/5493815764026?text=Hola%2C%20quiero%20conocer%20m%C3%A1s%20sobre%20los%20productos%20de%20La%20Gauchada%20Mates."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground transition-colors hover:text-primary"
@@ -97,7 +97,7 @@ export function SiteFooter() {
 
         <div className="mt-12 border-t border-border pt-8">
           <p className="text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} La Gauchada. Todos los derechos reservados.
+            © {new Date().getFullYear()} La Gauchada Mates. Todos los derechos reservados.
           </p>
         </div>
       </div>

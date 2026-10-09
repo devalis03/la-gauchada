@@ -10,15 +10,45 @@ export interface Product {
   featured?: boolean
   active?: boolean
   colors?: ProductColor[]
+  colorImages?: Record<string, string>
+  bundle?: ProductBundle
 }
 
 export type Category = "promos" | "mates" | "materas" | "yerberos" | "cuchillos-tablas" | "ponchos" | "sombreros-boinas" | "termos" | "bombillas" | "otros"
 
 export type ProductColor = string
 export function formatProductColor(color: ProductColor) {
-  if (color === "marron") return "Marrón"
-  if (color === "negro") return "Negro"
-  return color
+  const labels: Record<string, string> = {
+    marron: "Marrón",
+    negro: "Negro",
+    blanco: "Blanco",
+    rojo: "Rojo",
+    borravino: "Borravino",
+    bordo: "Bordó",
+    azul: "Azul",
+    "azul claro": "Azul claro",
+    "azul oscuro": "Azul oscuro",
+    celeste: "Celeste",
+    verde: "Verde",
+    "verde claro": "Verde claro",
+    "verde oscuro": "Verde oscuro",
+    amarillo: "Amarillo",
+    naranja: "Naranja",
+    rosa: "Rosa",
+    violeta: "Violeta",
+    morado: "Morado",
+    lila: "Lila",
+    gris: "Gris",
+    beige: "Beige",
+    crema: "Crema",
+    dorado: "Dorado",
+    plateado: "Plateado",
+    turquesa: "Turquesa",
+    terracota: "Terracota",
+    natural: "Natural",
+  }
+  const normalized = color.trim().toLowerCase()
+  return labels[normalized] ?? normalized.replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 export type SubcategoryId = "cuero-crudo" | "tradicionales" | "algarrobo" | "criollos"
@@ -35,6 +65,14 @@ export interface CartItem {
   stockItems?: StockItem[]
   selectedColor?: ProductColor
   priceOverride?: number
+  bundleSelections?: Record<string, ProductColor>
+  bundleComponentNames?: Record<string, string>
+  engraving?: EngravingOptions
+}
+
+export interface EngravingOptions {
+  text?: string
+  image?: string
 }
 
 export interface StockItem {

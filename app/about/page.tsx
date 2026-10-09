@@ -10,7 +10,7 @@ const owners = [
     name: "Pedro Cabrera",
     role: "Co-Fundador",
     image: "/images/owner-1.jpg",
-    bio: "Nacido en Misiones, Argentina, Carlos creció rodeado de plantaciones de yerba mate. Su pasión por compartir la cultura del mate lo llevó a fundar La Gauchada.",
+    bio: "Nacido en Misiones, Argentina, Carlos creció rodeado de plantaciones de yerba mate. Su pasión por compartir la cultura del mate lo llevó a fundar La Gauchada Mates.",
   },
   {
     name: "Rene Goane",
@@ -27,7 +27,7 @@ export default function AboutPage() {
       <section className="relative h-100 md:h-125">
         <Image
           src="/images/about-us.jpg"
-          alt="La Gauchada y sus productos con identidad argentina"
+          alt="La Gauchada Mates y sus productos con identidad argentina"
           fill
           className="object-cover"
           priority
@@ -57,7 +57,7 @@ export default function AboutPage() {
               Creemos que cada mate tiene algo de casa, de familia, de amigos y de nuestras raíces. Esa tradición argentina que queremos cuidar y mantener viva.
             </p>
             <p className="mt-6 leading-relaxed text-center">
-              La Gauchada nace de ahí: del amor por lo nuestro y de las ganas de acercarte productos que te conecten con lo que realmente importa.
+              La Gauchada Mates nace de ahí: del amor por lo nuestro y de las ganas de acercarte productos que te conecten con lo que realmente importa.
             </p>
             <p className="mt-6 leading-relaxed text-center">
               No buscamos solamente vender mates, sino compartir una forma de vivir nuestras costumbres y mantenerlas presentes.
@@ -74,7 +74,7 @@ export default function AboutPage() {
               Conocenos Mejor
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Las personas apasionadas detrás de La Gauchada
+              Las personas apasionadas detrás de La Gauchada Mates
             </p>
           </div>
 
@@ -169,7 +169,7 @@ export default function AboutPage() {
                     <Instagram className="h-5 w-5" />
                   </a>
                   <a
-                    href="https://wa.me/5493815764026?text=Hola%2C%20quiero%20conocer%20m%C3%A1s%20sobre%20los%20productos%20de%20La%20Gauchada."
+                    href="https://wa.me/5493815764026?text=Hola%2C%20quiero%20conocer%20m%C3%A1s%20sobre%20los%20productos%20de%20La%20Gauchada%20Mates."
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"

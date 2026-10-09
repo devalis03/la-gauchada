@@ -9,7 +9,7 @@ const benefits = [
   {
     icon: Truck,
     title: "Envíos a todo el país",
-    description: "Preparamos cada pedido con cuidado para que La Gauchada llegue estés donde estés.",
+    description: "Preparamos cada pedido con cuidado para que La Gauchada Mates llegue estés donde estés.",
   },
   {
     icon: ShieldCheck,

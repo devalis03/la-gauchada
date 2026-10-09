@@ -4,6 +4,7 @@ import {
   findOrderById,
   restoreOrderStockIfNeeded,
 } from "@/lib/repositories/orders-repo"
+import { getCartItemPrice } from "@/lib/cart-pricing"
 
 type PreferencePayload = {
   orderId?: string
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       title: item.product.name,
       quantity: item.quantity,
       currency_id: "ARS",
-      unit_price: Number(item.priceOverride ?? item.product.price),
+      unit_price: Number(getCartItemPrice(item)),
     }))
 
     const preferenceBody: {

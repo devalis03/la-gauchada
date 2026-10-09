@@ -68,17 +68,42 @@ function getPaymentMethodLabel(order: Order) {
   }
 }
 
+function getItemOptionLines(item: Order["items"][number]) {
+  const lines: string[] = []
+  if (item.selectedColor) lines.push(`Color: ${formatProductColor(item.selectedColor)}`)
+  for (const [productId, color] of Object.entries(item.bundleSelections ?? {})) {
+    lines.push(`${item.bundleComponentNames?.[productId] ?? `Componente ${productId}`}: ${formatProductColor(color)}`)
+  }
+  if (item.engraving?.text) lines.push(`Grabado: ${item.engraving.text}`)
+  if (item.engraving?.image) lines.push("Grabado: incluye imagen de referencia")
+  return lines
+}
+
 function getOrderItemsHtml(order: Order) {
   return order.items
-    .map(
-      (item) => `
+    .map((item) => {
+      const options = getItemOptionLines(item)
+        .map((line) => `<div style="margin-top: 3px; color: #6b7280; font-size: 12px;">${escapeHtml(line)}</div>`)
+        .join("")
+
+      return `
         <tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product.name)}${item.selectedColor ? ` (${escapeHtml(formatProductColor(item.selectedColor))})` : ""}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.product.name)}${options}</td>
           <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
           <td style="padding: 10px 0; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(getCartItemPrice(item) * item.quantity)}</td>
-        </tr>`,
-    )
+        </tr>`
+    })
     .join("")
+}
+
+function getEngravingAttachments(order: Order): EmailAttachment[] {
+  return order.items.flatMap((item, index) => {
+    const image = item.engraving?.image
+    if (!image?.startsWith("data:image/") || !image.includes(";base64,")) return []
+    const [header, content] = image.split(";base64,")
+    const extension = header.slice("data:image/".length).replace(/[^a-z0-9]/gi, "") || "png"
+    return [{ filename: `referencia-grabado-${index + 1}.${extension}`, content }]
+  })
 }
 
 function getOrderSummaryHtml(order: Order) {
@@ -106,7 +131,7 @@ function getEmailLayout(title: string, content: string) {
   <body style="margin: 0; background: #f5f3ef; padding: 32px 16px;">
     <main style="box-sizing: border-box; max-width: 680px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 8px;">
       <div style="border-bottom: 3px solid #4a7c59; padding-bottom: 16px; margin-bottom: 24px;">
-        <p style="margin: 0; color: #4a7c59; font: 700 14px Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase;">La Gauchada</p>
+        <p style="margin: 0; color: #4a7c59; font: 700 14px Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase;">La Gauchada Mates</p>
         <h1 style="margin: 12px 0 0; color: #252525; font: 700 28px Georgia, serif;">${title}</h1>
       </div>
       ${content}
@@ -154,7 +179,7 @@ async function createInvoiceAttachment(order: Order): Promise<EmailAttachment> {
   const gray = rgb(0.4, 0.4, 0.4)
   let y = 790
 
-  page.drawText("LA GAUCHADA", { x: 48, y, size: 20, font: boldFont, color: green })
+  page.drawText("LA GAUCHADA MATES", { x: 48, y, size: 20, font: boldFont, color: green })
   y -= 28
   page.drawText("Comprobante de compra", { x: 48, y, size: 14, font: boldFont, color: dark })
   page.drawText(`Pedido: ${order.id}`, { x: 360, y, size: 10, font: regularFont, color: gray })
@@ -179,7 +204,7 @@ async function createInvoiceAttachment(order: Order): Promise<EmailAttachment> {
   y -= 20
 
   for (const item of order.items) {
-    const productLabel = `${item.product.name}${item.selectedColor ? ` (${formatProductColor(item.selectedColor)})` : ""}`
+    const productLabel = `${item.product.name}${getItemOptionLines(item).length > 0 ? ` - ${getItemOptionLines(item).join(" / ")}` : ""}`
     const productName = productLabel.length > 52 ? `${productLabel.slice(0, 49)}...` : productLabel
     page.drawText(productName, { x: 48, y, size: 9, font: regularFont, color: dark })
     page.drawText(String(item.quantity), { x: 400, y, size: 9, font: regularFont, color: dark })
@@ -199,7 +224,7 @@ async function createInvoiceAttachment(order: Order): Promise<EmailAttachment> {
   page.drawText("TOTAL", { x: 390, y, size: 12, font: boldFont, color: green })
   page.drawText(formatCurrency(order.total), { x: 475, y, size: 12, font: boldFont, color: dark })
   y -= 44
-  page.drawText("Gracias por elegir La Gauchada.", { x: 48, y, size: 10, font: regularFont, color: gray })
+  page.drawText("Gracias por elegir La Gauchada Mates.", { x: 48, y, size: 10, font: regularFont, color: gray })
 
   const bytes = await pdf.save()
   return {
@@ -224,7 +249,7 @@ async function sendEmail({
   const resend = getResendClient()
   const { error } = await resend.emails.send(
     {
-      from: `La Gauchada <${getFromEmail()}>`,
+      from: `La Gauchada Mates <${getFromEmail()}>`,
       to,
       subject,
       html,
@@ -244,6 +269,7 @@ export async function sendAdminOrderNotification(order: Order) {
     to: getAdminEmail(),
     subject: `Nueva compra confirmada - ${order.id}`,
     html: getSellerEmailHtml(order),
+    attachments: getEngravingAttachments(order),
     idempotencyKey: `order-${order.id}-seller-confirmation`,
   })
 }
@@ -254,7 +280,7 @@ export async function sendCustomerOrderConfirmation(order: Order) {
     to: order.customer.email,
     subject: `Confirmación de compra - ${order.id}`,
     html: getCustomerEmailHtml(order),
-    attachments: [attachment],
+    attachments: [attachment, ...getEngravingAttachments(order)],
     idempotencyKey: `order-${order.id}-customer-confirmation`,
   })
 }
