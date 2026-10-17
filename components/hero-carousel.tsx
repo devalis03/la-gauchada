@@ -18,14 +18,14 @@ const slides = [
     id: 2,
     title: "Un mate hecho para vos.",
     subtitle: "Personalizamos nombres, iniciales, fechas, logos y diseños.",
-    image: "/images/hero-2.jpg",
+    image: "/images/heroSlide-2.jpeg",
     cta: { text: "Personalizar el mío", href: "/products?category=otros" },
   },
   {
     id: 3,
     title: "El regalo que siempre funciona",
     subtitle: "Combos materos listos para regalar y compartir.",
-    image: "/images/hero-3.jpg",
+    image: "/images/heroSlide-3.jpeg",
     cta: { text: "Ver Promos", href: "/products?category=promos" },
   },
 ]
@@ -56,11 +56,21 @@ export function HeroCarousel() {
           }`}
           aria-hidden={index !== current}
         >
+          {slide.id === 3 && (
+            <Image
+              src={slide.image}
+              alt=""
+              fill
+              className="scale-110 object-cover blur-2xl"
+              aria-hidden="true"
+              sizes="100vw"
+            />
+          )}
           <Image
             src={slide.image}
             alt={slide.title}
             fill
-            className="object-cover"
+            className={slide.id === 3 ? "object-contain" : "object-cover"}
             priority={index === 0}
             sizes="100vw"
           />

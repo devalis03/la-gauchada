@@ -5,21 +5,6 @@ import { FaWhatsapp } from "react-icons/fa"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
-const owners = [
-  {
-    name: "Pedro Cabrera",
-    role: "Co-Fundador",
-    image: "/images/owner-1.jpg",
-    bio: "Nacido en Misiones, Argentina, Carlos creció rodeado de plantaciones de yerba mate. Su pasión por compartir la cultura del mate lo llevó a fundar La Gauchada Mates.",
-  },
-  {
-    name: "Rene Goane",
-    role: "Co-Fundador",
-    image: "/images/owner-2.jpg",
-    bio: "María aporta su experiencia en artesanías para seleccionar nuestra colección de calabazas y accesorios. Cree que cada momento de mate debe ser especial.",
-  },
-]
-
 export default function AboutPage() {
   return (
     <div className="min-h-screen">
@@ -78,29 +63,32 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:max-w-4xl lg:mx-auto">
-            {owners.map((owner) => (
-              <Card key={owner.name} className="overflow-hidden">
-                <div className="relative aspect-square">
-                  <Image
-                    src={owner.image}
-                    alt={owner.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="font-serif text-xl font-semibold text-foreground">
-                    {owner.name}
-                  </h3>
-                  <p className="text-sm text-primary">{owner.role}</p>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    {owner.bio}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="mt-12 grid items-center gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] lg:gap-16">
+            <div className="relative mx-auto aspect-[3/4] w-full max-w-xl overflow-hidden rounded-lg">
+              <Image
+                src="/images/aboutUs.jpeg"
+                alt="Los fundadores de La Gauchada Mates compartiendo un mate"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 55vw"
+              />
+            </div>
+            <Card className="border-primary/15 bg-background/80">
+              <CardContent className="p-6 sm:p-8">
+                <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary">
+                  Nuestra historia
+                </p>
+                <h3 className="mt-3 font-serif text-2xl font-semibold text-foreground md:text-3xl">
+                  Dos amigos, una misma pasión
+                </h3>
+                <p className="mt-4 leading-relaxed text-muted-foreground">
+                  Somos dos amigos que compartimos el amor por el mate, por nuestras costumbres y por esos momentos que se vuelven recuerdos.
+                </p>
+                <p className="mt-4 leading-relaxed text-muted-foreground">
+                  Este texto es temporal y próximamente lo vamos a reemplazar por nuestra historia y una presentación más personal.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
