@@ -22,7 +22,10 @@ function getResendClient() {
 }
 
 function getFromEmail() {
-  return process.env.RESEND_FROM_EMAIL || DEFAULT_FROM_EMAIL
+  const configuredFrom = process.env.RESEND_FROM_EMAIL?.trim()
+  if (!configuredFrom) return `La Gauchada Mates <${DEFAULT_FROM_EMAIL}>`
+  if (configuredFrom.includes("<") && configuredFrom.includes(">")) return configuredFrom
+  return `La Gauchada Mates <${configuredFrom}>`
 }
 
 function getAdminEmail() {
@@ -249,7 +252,7 @@ async function sendEmail({
   const resend = getResendClient()
   const { error } = await resend.emails.send(
     {
-      from: `La Gauchada Mates <${getFromEmail()}>`,
+      from: getFromEmail(),
       to,
       subject,
       html,
