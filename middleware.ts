@@ -24,6 +24,14 @@ function isProtectedAdminRequest(request: NextRequest) {
     return true
   }
 
+  if (pathname === "/api/categories" && request.method !== "GET") {
+    return true
+  }
+
+  if (/^\/api\/categories\/[^/]+$/.test(pathname)) {
+    return true
+  }
+
   if (/^\/api\/products\/[^/]+$/.test(pathname) && request.method !== "GET") {
     return true
   }
@@ -77,5 +85,7 @@ export const config = {
     "/api/orders/:path*",
     "/api/products",
     "/api/products/:path*",
+    "/api/categories",
+    "/api/categories/:path*",
   ],
 }

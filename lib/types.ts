@@ -14,7 +14,15 @@ export interface Product {
   bundle?: ProductBundle
 }
 
-export type Category = "promos" | "mates" | "materas" | "yerberos" | "cuchillos-tablas" | "ponchos" | "sombreros-boinas" | "termos" | "bombillas" | "otros"
+export type Category = string
+
+export interface CategoryDefinition {
+  id: Category
+  name: string
+  description: string
+  image: string
+  active: boolean
+}
 
 export type ProductColor = string
 export function formatProductColor(color: ProductColor) {
@@ -126,17 +134,17 @@ export interface OrderNotification {
   sentAt?: string
 }
 
-export const CATEGORIES: { id: Category; name: string; description: string }[] = [
-  { id: "promos", name: "Promos", description: "Ofertas y paquetes especiales" },
-  { id: "mates", name: "Mates", description: "Todos los mates" },
-  { id: "materas", name: "Materas", description: "Bolsas para llevar" },
-  { id: "yerberos", name: "Yerberos", description: "Contenedores de yerba" },
-  { id: "cuchillos-tablas", name: "Cuchillos y Tablas", description: "Cuchillos y tablas para compartir" },
-  { id: "ponchos", name: "Ponchos", description: "Ponchos tradicionales" },
-  { id: "sombreros-boinas", name: "Sombreros y Boinas", description: "Sombreros y boinas tradicionales" },
-  { id: "termos", name: "Termos", description: "Termos para agua caliente" },
-  { id: "bombillas", name: "Bombillas", description: "Bombillas" },
-  { id: "otros", name: "Otros", description: "Otros accesorios" },
+export const CATEGORIES: CategoryDefinition[] = [
+  { id: "promos", name: "Promos", description: "Ofertas y paquetes especiales", image: "/images/Promos.jpg", active: true },
+  { id: "mates", name: "Mates", description: "Todos los mates", image: "/images/calabaza-natural.jpg", active: true },
+  { id: "materas", name: "Materas", description: "Bolsas para llevar", image: "/images/Materas.jpg", active: true },
+  { id: "yerberos", name: "Yerberos", description: "Contenedores de yerba", image: "/images/Yerberos.jpg", active: true },
+  { id: "cuchillos-tablas", name: "Cuchillos y Tablas", description: "Cuchillos y tablas para compartir", image: "/images/Cuchillos.jpg", active: true },
+  { id: "ponchos", name: "Ponchos", description: "Ponchos tradicionales", image: "/images/cat-accessories.jpg", active: true },
+  { id: "sombreros-boinas", name: "Sombreros y Boinas", description: "Sombreros y boinas tradicionales", image: "/images/Boinas.jpg", active: true },
+  { id: "termos", name: "Termos", description: "Termos para agua caliente", image: "/images/Termo.jpg", active: true },
+  { id: "bombillas", name: "Bombillas", description: "Bombillas", image: "/images/Bombillas.jpg", active: true },
+  { id: "otros", name: "Otros", description: "Otros accesorios", image: "/images/cepillo-bombilla.jpg", active: true },
 ]
 
 export const SUBCATEGORIES: Subcategory[] = [

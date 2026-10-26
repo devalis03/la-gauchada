@@ -1,21 +1,12 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
-import { CATEGORIES } from "@/lib/types"
-
-const categoryImages: Record<string, string> = {
-  "promos": "/images/kit-matero.jpg",
-  "mates": "/images/calabaza-natural.jpg",
-  "materas": "/images/bolsa-matera.jpg",
-  "yerberos": "/images/yerbera-cuero.jpg",
-  "cuchillos-tablas": "/images/otros.jpg",
-  "ponchos": "/images/poncho.jpg",
-  "sombreros-boinas": "/images/sombrero.jpg",
-  "termos": "/images/termo-stanley.jpg",
-  "bombillas": "/images/bombilla-alpaca.jpg",
-  "otros": "/images/cepillo-bombilla.jpg",
-}
+import { useCart } from "@/lib/cart-context"
 
 export function CategoryGrid() {
+  const { categories } = useCart()
+
   return (
     <section className="py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -29,14 +20,14 @@ export function CategoryGrid() {
         </div>
 
         <div className="mt-12 flex flex-wrap justify-center gap-4">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <Link
               key={category.id}
               href={`/products?category=${category.id}`}
               className="group relative aspect-[4/3] w-full overflow-hidden rounded-lg sm:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)] lg:aspect-square"
             >
               <Image
-                src={categoryImages[category.id]}
+                src={category.image}
                 alt={category.name}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"

@@ -19,7 +19,7 @@ const slides = [
     title: "Un mate hecho para vos.",
     subtitle: "Personalizamos nombres, iniciales, fechas, logos y diseños.",
     image: "/images/heroSlide-2.jpeg",
-    cta: { text: "Personalizar el mío", href: "/products?category=otros" },
+    cta: { text: "Personalizar el mío", href: "/products" },
   },
   {
     id: 3,

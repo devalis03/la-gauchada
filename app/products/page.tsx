@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { ProductCard } from "@/components/product-card"
 import { useCart } from "@/lib/cart-context"
-import { CATEGORIES, SUBCATEGORIES, type Category, type SubcategoryId } from "@/lib/types"
+import { SUBCATEGORIES, type Category, type SubcategoryId } from "@/lib/types"
 
 type CatalogFilter = Category | "featured"
 
@@ -21,7 +21,7 @@ function ProductsContent() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<SubcategoryId | null>(initialSubcategory)
   const [expandedCategory, setExpandedCategory] = useState<Category | null>(initialCategory === "mates" ? "mates" : null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const { products } = useCart()
+  const { products, categories } = useCart()
 
   useEffect(() => {
     setSelectedCategory(initialCategory)
@@ -96,7 +96,7 @@ function ProductsContent() {
         Todos los Productos
       </button>
 
-      {CATEGORIES.map((category) => {
+      {categories.map((category) => {
         const isMates = category.id === "mates"
         const isSelected = selectedCategory === category.id && !selectedSubcategory
         const isExpanded = expandedCategory === category.id
@@ -172,7 +172,7 @@ function ProductsContent() {
           </h1>
           <p className="mt-2 text-muted-foreground">
             {filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}
-            {selectedCategory && ` en ${selectedCategory === "featured" ? "Destacados" : CATEGORIES.find((c) => c.id === selectedCategory)?.name}`}
+            {selectedCategory && ` en ${selectedCategory === "featured" ? "Destacados" : categories.find((c) => c.id === selectedCategory)?.name}`}
             {selectedSubcategory && ` - ${SUBCATEGORIES.find((s) => s.id === selectedSubcategory)?.name}`}
           </p>
         </div>
