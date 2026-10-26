@@ -13,10 +13,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
 import { ENGRAVING_PRICE, getRecommendedPrice, hasMateInCart, MATE_BOMBILLA_PROMO_PRICE, PICO_DE_ORO_ID } from "@/lib/cart-pricing"
 import { getProductColorClass } from "@/lib/product-colors"
+import { canProductBeEngraved } from "@/lib/product-features"
 import { formatProductColor, type EngravingOptions, type Product, type ProductColor } from "@/lib/types"
 import { formatPrice } from "@/lib/utils"
-
-const ENGRAVING_CATEGORIES = new Set<Product["category"]>(["mates", "yerberos", "termos", "bombillas"])
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -86,7 +85,7 @@ export default function ProductDetailPage() {
 
   const displayImage = selectedColor ? product.colorImages?.[selectedColor] ?? product.image : product.image
   const galleryImages = Array.from(new Set([product.image, ...Object.values(product.colorImages ?? {})]))
-  const canEngrave = ENGRAVING_CATEGORIES.has(product.category)
+  const canEngrave = canProductBeEngraved(product)
   const isMate = product.category === "mates"
   const picoDeLoro = products.find((item) => item.id === PICO_DE_ORO_ID)
   const hasMate = hasMateInCart(items)

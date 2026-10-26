@@ -1,13 +1,14 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
-import type { Product, CartItem, ProductColor, EngravingOptions } from "./types"
+import { CATEGORIES, type CategoryDefinition, type Product, type CartItem, type ProductColor, type EngravingOptions } from "./types"
 import { initialProducts } from "./products"
 import { getCartItemPrice } from "./cart-pricing"
 
 interface CartContextType {
   items: CartItem[]
   products: Product[]
+  categories: CategoryDefinition[]
   addToCart: (product: Product, quantity?: number, selectedColor?: ProductColor, priceOverride?: number, options?: { bundleSelections?: Record<string, ProductColor>; engraving?: EngravingOptions }) => boolean
   removeFromCart: (item: CartItem) => void
   updateQuantity: (item: CartItem, quantity: number) => boolean
@@ -25,6 +26,7 @@ const CART_STORAGE_KEY = "mate-shop-cart"
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [categories, setCategories] = useState<CategoryDefinition[]>(CATEGORIES)
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Hydrate cart from localStorage on mount
@@ -40,6 +42,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     
     setIsHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    let isCancelled = false
+
+    async function loadCategories() {
+      try {
+        const response = await fetch("/api/categories", { cache: "no-store" })
+        if (!response.ok) throw new Error("No se pudieron cargar las categorías")
+        const payload = await response.json() as { data?: CategoryDefinition[] }
+        if (!Array.isArray(payload.data) || payload.data.length === 0) throw new Error("Respuesta inválida de categorías")
+        if (!isCancelled) setCategories(payload.data)
+      } catch {
+        if (!isCancelled) setCategories(CATEGORIES)
+      }
+    }
+
+    void loadCategories()
+    return () => {
+      isCancelled = true
+    }
   }, [])
 
   // Fetch shared products from backend (source of truth: database)
@@ -206,6 +229,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       value={{
         items,
         products,
+        categories,
         addToCart,
         removeFromCart,
         updateQuantity,

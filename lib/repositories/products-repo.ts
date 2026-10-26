@@ -1,4 +1,4 @@
-import type { Product, ProductBundle, StockItem } from "@/lib/types"
+import { CATEGORIES, type Product, type ProductBundle, type StockItem } from "@/lib/types"
 import { getSupabaseAdminClient } from "@/lib/supabase/server"
 
 function mapProductRowToDomain(row: {
@@ -57,8 +57,19 @@ export async function listProducts(includeInactive = false): Promise<Product[]> 
   }
 
   const mappedProducts = (data ?? []).map(mapProductRowToDomain)
-  const promoIds = mappedProducts.filter((product) => product.category === "promos").map((product) => product.id)
-  if (promoIds.length === 0) return mappedProducts
+  let visibleProducts = mappedProducts
+  if (!includeInactive) {
+    const { data: categories, error: categoryError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("active", true)
+    const activeCategoryIds = categoryError
+      ? new Set(CATEGORIES.filter((category) => category.active).map((category) => category.id))
+      : new Set((categories ?? []).map((category) => category.id))
+    visibleProducts = mappedProducts.filter((product) => activeCategoryIds.has(product.category))
+  }
+  const promoIds = visibleProducts.filter((product) => product.category === "promos").map((product) => product.id)
+  if (promoIds.length === 0) return visibleProducts
 
   const { data: bundles, error: bundleError } = await supabase
     .from("product_bundles")
@@ -68,7 +79,7 @@ export async function listProducts(includeInactive = false): Promise<Product[]> 
 
   const stockById = new Map(mappedProducts.map((product) => [product.id, product.stock]))
   const bundleById = new Map((bundles ?? []).map((bundle) => [bundle.product_id, bundle.components as ProductBundle["components"]]))
-  return mappedProducts.map((product) => {
+  return visibleProducts.map((product) => {
     if (product.category !== "promos") return product
     const components = bundleById.get(product.id) ?? []
     const available = components.length === 0

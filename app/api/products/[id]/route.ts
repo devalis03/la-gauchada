@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { updateProduct } from "@/lib/repositories/products-repo"
-import { CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/types"
+import { getCategoryById } from "@/lib/repositories/categories-repo"
+import { SUBCATEGORIES, type Product } from "@/lib/types"
 
 export async function PATCH(
   request: Request,
@@ -9,7 +10,7 @@ export async function PATCH(
   try {
     const { id } = await context.params
     const body = (await request.json()) as Partial<Product>
-    const input = validateProductInput(body)
+    const input = await validateProductInput(body)
 
     if (!input) {
       return NextResponse.json({ error: "Datos de producto inválidos" }, { status: 400 })
@@ -27,7 +28,8 @@ export async function PATCH(
   }
 }
 
-function validateProductInput(body: Partial<Product>) {
+async function validateProductInput(body: Partial<Product>) {
+  const category = typeof body.category === "string" ? await getCategoryById(body.category, true) : null
   if (
     typeof body.id !== "string" ||
     typeof body.name !== "string" || !body.name.trim() ||
@@ -35,7 +37,7 @@ function validateProductInput(body: Partial<Product>) {
     typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0 ||
     typeof body.image !== "string" || !body.image.trim() ||
     typeof body.category !== "string" ||
-    !CATEGORIES.some((category) => category.id === body.category) ||
+    !category ||
     (body.category === "mates" && !body.subcategory) ||
     (body.category !== "mates" && body.subcategory !== undefined && body.subcategory !== null) ||
     (body.subcategory !== undefined && body.subcategory !== null &&

@@ -4,13 +4,14 @@ import { formatPrice } from "@/lib/utils"
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import Image from "next/image"
-import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut, Plus, Pencil, Power, Search, ChevronDown, ChevronRight } from "lucide-react"
+import { Save, RefreshCw, Package, AlertTriangle, Check, Eye, LogOut, Plus, Pencil, Power, Search, ChevronDown, ChevronRight, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCart } from "@/lib/cart-context"
-import { CATEGORIES, SUBCATEGORIES, type ProductColor } from "@/lib/types"
+import { CATEGORIES, SUBCATEGORIES, type CategoryDefinition, type ProductColor } from "@/lib/types"
 import { initialProducts } from "@/lib/products"
 import { 
   getAllOrders, 
@@ -44,22 +45,30 @@ const emptyProductForm: ProductForm = {
   active: true,
 }
 
-const categoryPrefixes: Record<Product["category"], string> = {
-  promos: "promo",
-  mates: "mate",
-  materas: "matera",
-  yerberos: "yerbero",
-  termos: "termo",
-  bombillas: "bombilla",
-  "cuchillos-tablas": "cuchillo",
-  ponchos: "poncho",
-  "sombreros-boinas": "sombrero",
-  otros: "otro",
+function getProductIdPrefix(categoryId: string) {
+  const legacyPrefixes: Record<string, string> = {
+    promos: "promo",
+    mates: "mate",
+    materas: "matera",
+    yerberos: "yerbero",
+    "cuchillos-tablas": "cuchillo",
+    ponchos: "poncho",
+    "sombreros-boinas": "sombrero",
+    termos: "termo",
+    bombillas: "bombilla",
+    otros: "otro",
+  }
+  return legacyPrefixes[categoryId] ?? categoryId.replace(/[^a-z0-9]+/g, "")
 }
-
 
   export default function AdminPage() {
   const { products, updateStock } = useCart()
+  const [adminCategories, setAdminCategories] = useState<CategoryDefinition[]>(CATEGORIES)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [newCategoryDescription, setNewCategoryDescription] = useState("")
+  const [newCategoryImage, setNewCategoryImage] = useState<File | null>(null)
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
   const [editedStocks, setEditedStocks] = useState<Record<string, number>>({})
   const [savedProducts, setSavedProducts] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<"stock" | "products" | "orders">("stock")
@@ -130,6 +139,33 @@ const categoryPrefixes: Record<Product["category"], string> = {
     if (payload.data) setAdminProducts(payload.data)
   }
 
+  const refreshCategoriesData = async () => {
+    const response = await fetch("/api/admin/categories", { cache: "no-store" })
+    if (!response.ok) return
+    const payload = await response.json() as { data?: CategoryDefinition[] }
+    if (payload.data) {
+      setAdminCategories(payload.data)
+      setExpandedProductCategories((previous) => {
+        const next = new Set(previous)
+        payload.data?.forEach((category) => {
+          if (!previous.has(category.id) && !adminCategories.some((current) => current.id === category.id)) {
+            next.add(category.id)
+          }
+        })
+        return next
+      })
+      setExpandedStockCategories((previous) => {
+        const next = new Set(previous)
+        payload.data?.forEach((category) => {
+          if (!previous.has(category.id) && !adminCategories.some((current) => current.id === category.id)) {
+            next.add(category.id)
+          }
+        })
+        return next
+      })
+    }
+  }
+
   const filteredAdminProducts = useMemo(() => {
     const normalizedSearch = productSearch.trim().toLowerCase()
 
@@ -178,6 +214,53 @@ const categoryPrefixes: Record<Product["category"], string> = {
     setBundleComponents([])
     setProductError(null)
     setIsProductFormOpen(true)
+  }
+
+  const handleCreateCategory = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const name = newCategoryName.trim()
+    const id = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    if (!id || !name || !newCategoryImage) {
+      setCategoryError("Completa el nombre y selecciona una imagen.")
+      return
+    }
+
+    const imageData = new FormData()
+    imageData.append("file", newCategoryImage)
+    imageData.append("productId", id)
+    const imageResponse = await fetch("/api/admin/product-images", { method: "POST", body: imageData })
+    const imagePayload = await imageResponse.json() as { data?: { url: string }; error?: string }
+    if (!imageResponse.ok || !imagePayload.data?.url) {
+      setCategoryError(imagePayload.error ?? "No se pudo subir la imagen.")
+      return
+    }
+
+    const response = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, name, description: newCategoryDescription, image: imagePayload.data.url }),
+    })
+    const payload = await response.json() as { error?: string }
+    if (!response.ok) {
+      setCategoryError(payload.error ?? "No se pudo crear la categoría.")
+      return
+    }
+
+    setCategoryError(null)
+    setNewCategoryName("")
+    setNewCategoryDescription("")
+    setNewCategoryImage(null)
+    setIsCategoryDialogOpen(false)
+    await refreshCategoriesData()
+  }
+
+  const handleToggleCategory = async (category: CategoryDefinition) => {
+    const response = await fetch(`/api/categories/${category.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !category.active }),
+    })
+    if (response.ok) await refreshCategoriesData()
   }
 
   const openEditProductForm = async (product: Product) => {
@@ -394,6 +477,9 @@ const categoryPrefixes: Record<Product["category"], string> = {
   useEffect(() => {
     void refreshOrdersData()
     void refreshProductsData()
+    void refreshCategoriesData()
+    // These loaders are intentionally called once when the admin panel mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleConfirmTransference = async (orderId: string) => {
@@ -423,7 +509,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
   }
 
   const getNextProductIdPreview = () => {
-    const prefix = categoryPrefixes[productForm.category]
+    const prefix = getProductIdPrefix(productForm.category) || "producto"
     const numbers = adminProducts
       .map((product) => product.id.match(new RegExp(`^${prefix}-(\\d+)$`)))
       .filter((match): match is RegExpMatchArray => match !== null)
@@ -552,7 +638,7 @@ const categoryPrefixes: Record<Product["category"], string> = {
                       </div>
                     </div>
                     <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={productForm.category} onChange={(event) => handleProductFormChange("category", event.target.value)}>
-                      {CATEGORIES.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                      {adminCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                     </select>
                     {productForm.category === "promos" && (
                       <div className="md:col-span-2 space-y-3 rounded-md border p-4">
@@ -645,13 +731,13 @@ const categoryPrefixes: Record<Product["category"], string> = {
                 aria-label="Filtrar productos por categoría"
               >
                 <option value="all">Todas las categorías</option>
-                {CATEGORIES.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                {adminCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
               </select>
             </div>
 
             {filteredAdminProducts.length > 0 ? (
               <div className="space-y-4">
-                {CATEGORIES.map((category) => {
+                {adminCategories.map((category) => {
                   const categoryProducts = filteredAdminProducts.filter((product) => product.category === category.id)
                   if (categoryProducts.length === 0) return null
 
@@ -756,25 +842,65 @@ const categoryPrefixes: Record<Product["category"], string> = {
               </Button>
             </div>
 
+            <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nueva categoría</DialogTitle>
+                  <DialogDescription>Indica un nombre, una descripción opcional y selecciona una imagen desde tu equipo.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={(event) => void handleCreateCategory(event)} className="space-y-4">
+                  <Input placeholder="Nombre de la categoría" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} required />
+                  <Input placeholder="Descripción (opcional)" value={newCategoryDescription} onChange={(event) => setNewCategoryDescription(event.target.value)} />
+                  <div className="space-y-2">
+                    <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setNewCategoryImage(event.target.files?.[0] ?? null)} required />
+                    {newCategoryImage && <p className="text-xs text-muted-foreground">Imagen seleccionada: {newCategoryImage.name}</p>}
+                  </div>
+                  {categoryError && <p className="text-sm text-destructive">{categoryError}</p>}
+                  <DialogFooter>
+                    <Button type="submit" className="gap-2"><Upload className="h-4 w-4" />Crear categoría</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <div className="mb-6 flex justify-end">
+              <Button type="button" onClick={() => { setCategoryError(null); setIsCategoryDialogOpen(true) }} className="gap-2">
+                <Plus className="h-4 w-4" />Nueva categoría
+              </Button>
+            </div>
+
             {/* Product List by Category */}
-            {CATEGORIES.map((category) => {
-              const categoryProducts = products.filter((p) => p.category === category.id)
+            {adminCategories.map((category) => {
+              const categoryProducts = adminProducts.filter((p) => p.category === category.id)
               const isExpanded = expandedStockCategories.has(category.id)
               return (
                 <Card key={category.id} className="mb-6 overflow-hidden">
                   <CardHeader className="p-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleStockCategory(category.id)}
-                      className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-secondary/50"
-                      aria-expanded={isExpanded}
-                    >
-                      <span>
+                    <div className="flex items-center gap-3 p-6">
+                      <button
+                        type="button"
+                        onClick={() => toggleStockCategory(category.id)}
+                        className="flex min-w-0 flex-1 items-center justify-between text-left transition-colors hover:bg-secondary/50"
+                        aria-expanded={isExpanded}
+                      >
+                        <span>
                         <CardTitle>{category.name}</CardTitle>
                         <CardDescription>{category.description}</CardDescription>
-                      </span>
-                      {isExpanded ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
-                    </button>
+                        </span>
+                        {isExpanded ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                      </button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={category.active ? "outline" : "default"}
+                        onClick={() => void handleToggleCategory(category)}
+                        className="shrink-0 gap-2"
+                        title={category.active ? "Desactivar categoría" : "Activar categoría"}
+                      >
+                        <Power className="h-4 w-4" />
+                        <span className="hidden sm:inline">{category.active ? "Desactivar" : "Activar"}</span>
+                      </Button>
+                    </div>
                   </CardHeader>
                   {isExpanded && <CardContent>
                     {categoryProducts.length === 0 ? (

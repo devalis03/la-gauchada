@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createProduct, getNextProductId, listProducts } from "@/lib/repositories/products-repo"
-import { CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/types"
+import { getCategoryById } from "@/lib/repositories/categories-repo"
+import { SUBCATEGORIES, type Product } from "@/lib/types"
 
 export async function GET() {
   try {
@@ -15,7 +16,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<Product>
-    const product = validateProductInput(body)
+    const product = await validateProductInput(body)
 
     if (!product) {
       return NextResponse.json({ error: "Datos de producto inválidos" }, { status: 400 })
@@ -29,14 +30,15 @@ export async function POST(request: Request) {
   }
 }
 
-function validateProductInput(body: Partial<Product>) {
+async function validateProductInput(body: Partial<Product>) {
+  const category = typeof body.category === "string" ? await getCategoryById(body.category) : null
   if (
     typeof body.name !== "string" || !body.name.trim() ||
     typeof body.description !== "string" ||
     typeof body.price !== "number" || !Number.isFinite(body.price) || body.price < 0 ||
     typeof body.image !== "string" || !body.image.trim() ||
     typeof body.category !== "string" ||
-    !CATEGORIES.some((category) => category.id === body.category) ||
+    !category ||
     (body.category === "mates" && !body.subcategory) ||
     (body.category !== "mates" && body.subcategory !== undefined && body.subcategory !== null) ||
     (body.subcategory !== undefined && body.subcategory !== null &&
