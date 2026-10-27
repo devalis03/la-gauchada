@@ -11,6 +11,7 @@ export interface Product {
   active?: boolean
   colors?: ProductColor[]
   colorImages?: Record<string, string>
+  colorHexes?: Record<string, string>
   bundle?: ProductBundle
 }
 
@@ -140,7 +141,7 @@ export const CATEGORIES: CategoryDefinition[] = [
   { id: "materas", name: "Materas", description: "Bolsas para llevar", image: "/images/Materas.jpg", active: true },
   { id: "yerberos", name: "Yerberos", description: "Contenedores de yerba", image: "/images/Yerberos.jpg", active: true },
   { id: "cuchillos-tablas", name: "Cuchillos y Tablas", description: "Cuchillos y tablas para compartir", image: "/images/Cuchillos.jpg", active: true },
-  { id: "ponchos", name: "Ponchos", description: "Ponchos tradicionales", image: "/images/cat-accessories.jpg", active: true },
+  { id: "ponchos", name: "Ponchos", description: "Ponchos tradicionales", image: "/images/Ponchos.jpg", active: true },
   { id: "sombreros-boinas", name: "Sombreros y Boinas", description: "Sombreros y boinas tradicionales", image: "/images/Boinas.jpg", active: true },
   { id: "termos", name: "Termos", description: "Termos para agua caliente", image: "/images/Termo.jpg", active: true },
   { id: "bombillas", name: "Bombillas", description: "Bombillas", image: "/images/Bombillas.jpg", active: true },

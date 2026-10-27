@@ -25,7 +25,7 @@ const slides = [
     id: 3,
     title: "El regalo que siempre funciona",
     subtitle: "Combos materos listos para regalar y compartir.",
-    image: "/images/heroSlide-3.jpeg",
+    image: "/images/hero-slide3.jpg",
     cta: { text: "Ver Promos", href: "/products?category=promos" },
   },
 ]
@@ -56,21 +56,11 @@ export function HeroCarousel() {
           }`}
           aria-hidden={index !== current}
         >
-          {slide.id === 3 && (
-            <Image
-              src={slide.image}
-              alt=""
-              fill
-              className="scale-110 object-cover blur-2xl"
-              aria-hidden="true"
-              sizes="100vw"
-            />
-          )}
           <Image
             src={slide.image}
             alt={slide.title}
             fill
-            className={slide.id === 3 ? "object-contain" : "object-cover"}
+            className="object-cover"
             priority={index === 0}
             sizes="100vw"
           />

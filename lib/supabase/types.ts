@@ -3,6 +3,35 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
+      categories: {
+        Row: {
+          id: string
+          name: string
+          description: string
+          image: string
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          name: string
+          description?: string
+          image: string
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          image?: string
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           id: string
@@ -17,6 +46,7 @@ export interface Database {
           active: boolean
           colors: string[]
           color_images: Json
+          color_hexes: Json
           created_at: string
           updated_at: string
         }
@@ -33,6 +63,7 @@ export interface Database {
           active?: boolean
           colors?: string[]
           color_images?: Json
+          color_hexes?: Json
           created_at?: string
           updated_at?: string
         }

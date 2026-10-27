@@ -48,6 +48,10 @@ async function validateProductInput(body: Partial<Product>) {
     (body.colorImages !== undefined && (
       typeof body.colorImages !== "object" || body.colorImages === null || Array.isArray(body.colorImages) ||
       Object.values(body.colorImages).some((url) => typeof url !== "string" || !url.trim())
+    )) ||
+    (body.colorHexes !== undefined && (
+      typeof body.colorHexes !== "object" || body.colorHexes === null || Array.isArray(body.colorHexes) ||
+      Object.values(body.colorHexes).some((hex) => typeof hex !== "string" || !/^#[0-9a-f]{6}$/i.test(hex))
     ))
   ) {
     return null
@@ -67,6 +71,9 @@ async function validateProductInput(body: Partial<Product>) {
     colors: body.colors?.map((color) => color.trim()).filter(Boolean) ?? [],
     colorImages: body.colorImages
       ? Object.fromEntries(Object.entries(body.colorImages).map(([color, url]) => [color.trim(), url.trim()]))
+      : {},
+    colorHexes: body.colorHexes
+      ? Object.fromEntries(Object.entries(body.colorHexes).map(([color, hex]) => [color.trim(), hex.trim().toLowerCase()]))
       : {},
   }
 }
