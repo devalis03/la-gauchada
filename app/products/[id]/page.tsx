@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
 import { ENGRAVING_PRICE, getRecommendedPrice, hasMateInCart, MATE_BOMBILLA_PROMO_PRICE, PICO_DE_ORO_ID } from "@/lib/cart-pricing"
-import { getProductColorClass } from "@/lib/product-colors"
+import { getProductColorStyle } from "@/lib/product-colors"
 import { canProductBeEngraved } from "@/lib/product-features"
 import { formatProductColor, type EngravingOptions, type Product, type ProductColor } from "@/lib/types"
 import { formatPrice } from "@/lib/utils"
@@ -219,7 +219,7 @@ export default function ProductDetailPage() {
                 <div className="mt-3 flex flex-wrap gap-3">
                   {product.colors.map((color) => (
                     <button key={color} type="button" onClick={() => { setSelectedColor(color); setGalleryImage(product.colorImages?.[color] ?? product.image) }} className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${selectedColor === color ? "border-primary ring-2 ring-primary/20" : "border-border"}`} aria-pressed={selectedColor === color}>
-                      <span className={`h-5 w-5 rounded-sm border ${getProductColorClass(color)}`} />
+                      <span className="h-5 w-5 rounded-sm border" style={getProductColorStyle(color, product.colorHexes)} />
                       {formatProductColor(color)}
                     </button>
                   ))}
@@ -241,7 +241,7 @@ export default function ProductDetailPage() {
                         <div className="mt-2 flex flex-wrap gap-2">
                           {componentProduct.colors?.map((color) => (
                             <button key={color} type="button" onClick={() => setBundleSelections((previous) => ({ ...previous, [component.productId]: color }))} className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs ${bundleSelections[component.productId] === color ? "border-primary ring-2 ring-primary/20" : "border-border"}`} aria-pressed={bundleSelections[component.productId] === color}>
-                              <span className={`h-4 w-4 rounded-sm border ${getProductColorClass(color)}`} />
+                              <span className="h-4 w-4 rounded-sm border" style={getProductColorStyle(color, product.colorHexes)} />
                               {formatProductColor(color)}
                             </button>
                           ))}

@@ -1,8 +1,15 @@
+"use client"
+
+import { usePathname } from "next/navigation"
 import { FaWhatsapp } from "react-icons/fa"
 
 const whatsappHref = "https://wa.me/5493815764026?text=Hola%2C%20quiero%20conocer%20m%C3%A1s%20sobre%20los%20productos%20de%20La%20Gauchada%20Mates."
 
 export function WhatsappButton() {
+  const pathname = usePathname()
+
+  if (!pathname || pathname.startsWith("/admin")) return null
+
   return (
     <a
       href={whatsappHref}

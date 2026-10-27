@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCart } from "@/lib/cart-context"
 import type { Product, ProductColor } from "@/lib/types"
-import { getProductColorClass } from "@/lib/product-colors"
+import { getProductColorStyle } from "@/lib/product-colors"
 import { formatPrice } from "@/lib/utils"
 
 interface ProductCardProps {
@@ -97,7 +97,8 @@ export function ProductCard({ product, compact = false, priceOverride, promoLabe
                     aria-pressed={selectedColor === color}
                     title={color}
                     onClick={() => setSelectedColor(color)}
-                    className={`h-6 w-6 rounded-sm border-2 ${getProductColorClass(color)} ${selectedColor === color ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+                    className={`h-6 w-6 rounded-sm border-2 ${selectedColor === color ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+                    style={getProductColorStyle(color, product.colorHexes)}
                   >
                     <span className="sr-only">{color}</span>
                   </button>

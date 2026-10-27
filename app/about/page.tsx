@@ -75,17 +75,17 @@ export default function AboutPage() {
             </div>
             <Card className="border-primary/15 bg-background/80">
               <CardContent className="p-6 sm:p-8">
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary">
-                  Nuestra historia
-                </p>
                 <h3 className="mt-3 font-serif text-2xl font-semibold text-foreground md:text-3xl">
-                  Dos amigos, una misma pasión
+                  ¿Quiénes somos?
                 </h3>
                 <p className="mt-4 leading-relaxed text-muted-foreground">
-                  Somos dos amigos que compartimos el amor por el mate, por nuestras costumbres y por esos momentos que se vuelven recuerdos.
+                  Somos <strong>Pedro Cabrera y René Goane, ingenieros industriales y fundadores de La Gauchada</strong>, un emprendimiento tucumano nacido de nuestra pasión por el mate y las tradiciones argentinas.
                 </p>
                 <p className="mt-4 leading-relaxed text-muted-foreground">
-                  Este texto es temporal y próximamente lo vamos a reemplazar por nuestra historia y una presentación más personal.
+                  Buscamos ofrecer productos de calidad, combinando tradición, personalización y cercanía con nuestros clientes.
+                </p>
+                <p className="mt-4 leading-relaxed text-muted-foreground">
+                  <em>La Gauchada — Pequeños mates, grandes momentos.</em>
                 </p>
               </CardContent>
             </Card>

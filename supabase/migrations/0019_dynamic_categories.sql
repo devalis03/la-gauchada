@@ -15,7 +15,7 @@ values
   ('materas', 'Materas', 'Bolsas para llevar', '/images/Materas.jpg'),
   ('yerberos', 'Yerberos', 'Contenedores de yerba', '/images/Yerberos.jpg'),
   ('cuchillos-tablas', 'Cuchillos y Tablas', 'Cuchillos y tablas para compartir', '/images/Cuchillos.jpg'),
-  ('ponchos', 'Ponchos', 'Ponchos tradicionales', '/images/cat-accessories.jpg'),
+  ('ponchos', 'Ponchos', 'Ponchos tradicionales', '/images/Ponchos.jpg'),
   ('sombreros-boinas', 'Sombreros y Boinas', 'Sombreros y boinas tradicionales', '/images/Boinas.jpg'),
   ('termos', 'Termos', 'Termos para agua caliente', '/images/Termo.jpg'),
   ('bombillas', 'Bombillas', 'Bombillas', '/images/Bombillas.jpg'),

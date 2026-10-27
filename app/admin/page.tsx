@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ProductColorEditor } from "@/components/product-color-editor"
 import { useCart } from "@/lib/cart-context"
 import { CATEGORIES, SUBCATEGORIES, type CategoryDefinition, type ProductColor } from "@/lib/types"
 import { initialProducts } from "@/lib/products"
@@ -23,6 +24,7 @@ import {
   type OrderStats
 } from "@/lib/order-service"
 import type { Product } from "@/lib/types"
+import { findProductColor } from "@/lib/product-colors"
 
 type ProductForm = Omit<Product, "active" | "featured" | "subcategory"> & {
   active: boolean
@@ -67,6 +69,8 @@ function getProductIdPrefix(categoryId: string) {
   const [newCategoryName, setNewCategoryName] = useState("")
   const [newCategoryDescription, setNewCategoryDescription] = useState("")
   const [newCategoryImage, setNewCategoryImage] = useState<File | null>(null)
+  const [categoryImagePreview, setCategoryImagePreview] = useState("")
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
   const [categoryError, setCategoryError] = useState<string | null>(null)
   const [editedStocks, setEditedStocks] = useState<Record<string, number>>({})
@@ -84,6 +88,7 @@ function getProductIdPrefix(categoryId: string) {
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm)
   const [hasColorOptions, setHasColorOptions] = useState(false)
   const [colorInput, setColorInput] = useState("")
+  const [colorHexes, setColorHexes] = useState<Record<string, string>>({})
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState(emptyProductForm.image)
   const [colorImageFiles, setColorImageFiles] = useState<Record<string, File>>({})
@@ -207,6 +212,7 @@ function getProductIdPrefix(categoryId: string) {
     setProductForm(emptyProductForm)
     setHasColorOptions(false)
     setColorInput("")
+    setColorHexes({})
     setSelectedImageFile(null)
     setImagePreview(emptyProductForm.image)
     setColorImageFiles({})
@@ -216,29 +222,55 @@ function getProductIdPrefix(categoryId: string) {
     setIsProductFormOpen(true)
   }
 
-  const handleCreateCategory = async (event: React.FormEvent<HTMLFormElement>) => {
+  const openNewCategoryDialog = () => {
+    setEditingCategoryId(null)
+    setNewCategoryName("")
+    setNewCategoryDescription("")
+    setNewCategoryImage(null)
+    setCategoryImagePreview("")
+    setCategoryError(null)
+    setIsCategoryDialogOpen(true)
+  }
+
+  const openEditCategoryDialog = (category: CategoryDefinition) => {
+    setEditingCategoryId(category.id)
+    setNewCategoryName(category.name)
+    setNewCategoryDescription(category.description)
+    setNewCategoryImage(null)
+    setCategoryImagePreview(category.image)
+    setCategoryError(null)
+    setIsCategoryDialogOpen(true)
+  }
+
+  const handleSaveCategory = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const name = newCategoryName.trim()
-    const id = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
-    if (!id || !name || !newCategoryImage) {
-      setCategoryError("Completa el nombre y selecciona una imagen.")
+    const id = editingCategoryId ?? name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    if (!id || !name || (!editingCategoryId && !newCategoryImage)) {
+      setCategoryError(editingCategoryId ? "Completa el nombre de la categoría." : "Completa el nombre y selecciona una imagen.")
       return
     }
 
-    const imageData = new FormData()
-    imageData.append("file", newCategoryImage)
-    imageData.append("productId", id)
-    const imageResponse = await fetch("/api/admin/product-images", { method: "POST", body: imageData })
-    const imagePayload = await imageResponse.json() as { data?: { url: string }; error?: string }
-    if (!imageResponse.ok || !imagePayload.data?.url) {
-      setCategoryError(imagePayload.error ?? "No se pudo subir la imagen.")
-      return
+    let image = categoryImagePreview
+    if (newCategoryImage) {
+      const imageData = new FormData()
+      imageData.append("file", newCategoryImage)
+      imageData.append("productId", id)
+      const imageResponse = await fetch("/api/admin/product-images", { method: "POST", body: imageData })
+      const imagePayload = await imageResponse.json() as { data?: { url: string }; error?: string }
+      if (!imageResponse.ok || !imagePayload.data?.url) {
+        setCategoryError(imagePayload.error ?? "No se pudo subir la imagen.")
+        return
+      }
+      image = imagePayload.data.url
     }
 
-    const response = await fetch("/api/categories", {
-      method: "POST",
+    const response = await fetch(editingCategoryId ? `/api/categories/${id}` : "/api/categories", {
+      method: editingCategoryId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, name, description: newCategoryDescription, image: imagePayload.data.url }),
+      body: JSON.stringify(editingCategoryId
+        ? { name, description: newCategoryDescription, ...(image ? { image } : {}) }
+        : { id, name, description: newCategoryDescription, image }),
     })
     const payload = await response.json() as { error?: string }
     if (!response.ok) {
@@ -250,6 +282,8 @@ function getProductIdPrefix(categoryId: string) {
     setNewCategoryName("")
     setNewCategoryDescription("")
     setNewCategoryImage(null)
+    setCategoryImagePreview("")
+    setEditingCategoryId(null)
     setIsCategoryDialogOpen(false)
     await refreshCategoriesData()
   }
@@ -268,6 +302,7 @@ function getProductIdPrefix(categoryId: string) {
     setProductForm({ ...product, subcategory: product.subcategory ?? null, active: product.active !== false, featured: product.featured === true })
     setHasColorOptions((product.colors?.length ?? 0) > 0)
     setColorInput(product.colors?.join(", ") ?? "")
+    setColorHexes(product.colorHexes ?? {})
     setSelectedImageFile(null)
     setImagePreview(product.image)
     setColorImageFiles({})
@@ -317,7 +352,9 @@ function getProductIdPrefix(categoryId: string) {
     event.preventDefault()
     setProductError(null)
 
-    const normalizedColors = hasColorOptions ? colorInput.split(",").map((color) => color.trim()).filter(Boolean) : []
+    const normalizedColors = hasColorOptions
+      ? colorInput.split(",").map((color) => color.trim()).filter(Boolean).map((color) => findProductColor(color)?.name ?? color)
+      : []
     if (hasColorOptions && normalizedColors.length === 0) {
       setProductError("Indicá al menos un color o desmarcá la opción de colores")
       return
@@ -353,11 +390,12 @@ function getProductIdPrefix(categoryId: string) {
     const colorImages = normalizedColors.length > 1
       ? Object.fromEntries(normalizedColors.flatMap((color) => colorImageUrls[color] ? [[color, colorImageUrls[color]]] : []))
       : {}
+    const normalizedColorHexes = Object.fromEntries(normalizedColors.flatMap((color) => colorHexes[color] ? [[color, colorHexes[color]]] : []))
 
     const response = await fetch(editingProductId ? `/api/products/${editingProductId}` : "/api/products", {
       method: editingProductId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...productForm, image, colors: normalizedColors, colorImages }),
+      body: JSON.stringify({ ...productForm, image, colors: normalizedColors, colorImages, colorHexes: normalizedColorHexes }),
     })
     const payload = await response.json() as { data?: Product; error?: string }
     if (!response.ok || !payload.data) {
@@ -672,17 +710,16 @@ function getProductIdPrefix(categoryId: string) {
                           checked={hasColorOptions}
                           onChange={(event) => {
                             setHasColorOptions(event.target.checked)
-                            if (!event.target.checked) setColorInput("")
+                            if (!event.target.checked) {
+                              setColorInput("")
+                              setColorHexes({})
+                            }
                           }}
                         />
                         Este producto tiene opciones de colores
                       </label>
                       {hasColorOptions && (
-                        <Input
-                          placeholder="Ej.: Marrón, Negro, Rojo"
-                          value={colorInput}
-                          onChange={(event) => setColorInput(event.target.value)}
-                        />
+                        <ProductColorEditor value={colorInput} customColors={colorHexes} onChange={setColorInput} onCustomColorsChange={setColorHexes} />
                       )}
                       {hasColorOptions && colorInput.split(",").map((color) => color.trim()).filter(Boolean).length > 1 && (
                         <div className="space-y-3 border-t pt-3">
@@ -845,26 +882,27 @@ function getProductIdPrefix(categoryId: string) {
             <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Nueva categoría</DialogTitle>
-                  <DialogDescription>Indica un nombre, una descripción opcional y selecciona una imagen desde tu equipo.</DialogDescription>
+                  <DialogTitle>{editingCategoryId ? "Editar categoría" : "Nueva categoría"}</DialogTitle>
+                  <DialogDescription>{editingCategoryId ? "Actualiza el nombre, la descripción o reemplaza la imagen de esta categoría." : "Indica un nombre, una descripción opcional y selecciona una imagen desde tu equipo."}</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={(event) => void handleCreateCategory(event)} className="space-y-4">
+                <form onSubmit={(event) => void handleSaveCategory(event)} className="space-y-4">
                   <Input placeholder="Nombre de la categoría" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} required />
                   <Input placeholder="Descripción (opcional)" value={newCategoryDescription} onChange={(event) => setNewCategoryDescription(event.target.value)} />
                   <div className="space-y-2">
-                    <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setNewCategoryImage(event.target.files?.[0] ?? null)} required />
+                    <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setNewCategoryImage(event.target.files?.[0] ?? null)} required={!editingCategoryId} />
+                    {categoryImagePreview && <p className="text-xs text-muted-foreground">Imagen actual guardada. Selecciona otra para reemplazarla.</p>}
                     {newCategoryImage && <p className="text-xs text-muted-foreground">Imagen seleccionada: {newCategoryImage.name}</p>}
                   </div>
                   {categoryError && <p className="text-sm text-destructive">{categoryError}</p>}
                   <DialogFooter>
-                    <Button type="submit" className="gap-2"><Upload className="h-4 w-4" />Crear categoría</Button>
+                    <Button type="submit" className="gap-2"><Upload className="h-4 w-4" />{editingCategoryId ? "Guardar cambios" : "Crear categoría"}</Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
             </Dialog>
 
             <div className="mb-6 flex justify-end">
-              <Button type="button" onClick={() => { setCategoryError(null); setIsCategoryDialogOpen(true) }} className="gap-2">
+              <Button type="button" onClick={openNewCategoryDialog} className="gap-2">
                 <Plus className="h-4 w-4" />Nueva categoría
               </Button>
             </div>
@@ -899,6 +937,17 @@ function getProductIdPrefix(categoryId: string) {
                       >
                         <Power className="h-4 w-4" />
                         <span className="hidden sm:inline">{category.active ? "Desactivar" : "Activar"}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditCategoryDialog(category)}
+                        className="shrink-0 gap-2"
+                        title="Editar categoría"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="hidden sm:inline">Editar</span>
                       </Button>
                     </div>
                   </CardHeader>

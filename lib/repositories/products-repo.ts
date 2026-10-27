@@ -14,9 +14,13 @@ function mapProductRowToDomain(row: {
   active?: boolean
   colors?: string[] | null
   color_images?: unknown
+  color_hexes?: unknown
 }): Product {
   const colorImages = row.color_images && typeof row.color_images === "object" && !Array.isArray(row.color_images)
     ? Object.fromEntries(Object.entries(row.color_images).filter(([, url]) => typeof url === "string" && url.trim()))
+    : undefined
+  const colorHexes = row.color_hexes && typeof row.color_hexes === "object" && !Array.isArray(row.color_hexes)
+    ? Object.fromEntries(Object.entries(row.color_hexes).filter(([, hex]) => typeof hex === "string" && /^#[0-9a-f]{6}$/i.test(hex)))
     : undefined
 
   return {
@@ -32,10 +36,11 @@ function mapProductRowToDomain(row: {
     active: row.active ?? true,
     colors: row.colors ?? undefined,
     colorImages: colorImages && Object.keys(colorImages).length > 0 ? colorImages : undefined,
+    colorHexes: colorHexes && Object.keys(colorHexes).length > 0 ? colorHexes : undefined,
   }
 }
 
-const productSelect = "id, name, description, price, image, category, subcategory, stock, featured, active, colors, color_images"
+const productSelect = "id, name, description, price, image, category, subcategory, stock, featured, active, colors, color_images, color_hexes"
 
 export async function listProducts(includeInactive = false): Promise<Product[]> {
   const supabase = getSupabaseAdminClient()
@@ -122,14 +127,15 @@ export type ProductInput = {
   active: boolean
   colors?: string[]
   colorImages?: Record<string, string>
+  colorHexes?: Record<string, string>
 }
 
 export async function createProduct(input: ProductInput): Promise<Product> {
   const supabase = getSupabaseAdminClient()
-  const { colorImages, ...productInput } = input
+  const { colorImages, colorHexes, ...productInput } = input
   const { data, error } = await supabase
     .from("products")
-    .insert({ ...productInput, color_images: colorImages ?? {} })
+    .insert({ ...productInput, color_images: colorImages ?? {}, color_hexes: colorHexes ?? {} })
     .select(productSelect)
     .single()
 
@@ -152,10 +158,10 @@ export async function updateProduct(
   input: Omit<ProductInput, "id">
 ): Promise<Product | null> {
   const supabase = getSupabaseAdminClient()
-  const { colorImages, ...productInput } = input
+  const { colorImages, colorHexes, ...productInput } = input
   const { data, error } = await supabase
     .from("products")
-    .update({ ...productInput, color_images: colorImages ?? {} })
+    .update({ ...productInput, color_images: colorImages ?? {}, color_hexes: colorHexes ?? {} })
     .eq("id", productId)
     .select(productSelect)
     .maybeSingle()
