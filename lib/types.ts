@@ -137,7 +137,7 @@ export interface OrderNotification {
 
 export const CATEGORIES: CategoryDefinition[] = [
   { id: "promos", name: "Promos", description: "Ofertas y paquetes especiales", image: "/images/Promos.jpg", active: true },
-  { id: "mates", name: "Mates", description: "Todos los mates", image: "/images/calabaza-natural.jpg", active: true },
+  { id: "mates", name: "Mates", description: "Todos los mates", image: "/images/Mates.jpg", active: true },
   { id: "materas", name: "Materas", description: "Bolsas para llevar", image: "/images/Materas.jpg", active: true },
   { id: "yerberos", name: "Yerberos", description: "Contenedores de yerba", image: "/images/Yerberos.jpg", active: true },
   { id: "cuchillos-tablas", name: "Cuchillos y Tablas", description: "Cuchillos y tablas para compartir", image: "/images/Cuchillos.jpg", active: true },
